@@ -5,7 +5,7 @@
 // 导入依赖模块
 // import { setupMessageQueue } from './messageQueue.js'; // Removed as per task
 import { logger } from '../utils/logger.js';
-import { basicFilter, platformFilter } from './filter.js';
+import { basicFilter, platformFilter, vulgarityFilter, educationContentFilter } from './filter.js'; // Added new filters
 import { TimeSynchronizer } from './sync.js';
 
 // 初始化语音引擎
@@ -27,8 +27,11 @@ class DanmuCore {
     
     // 初始化语音引擎
     this.voiceEngine = initializeVoiceEngine();
+    this.currentMode = 'default'; // Initialize currentMode
     
-    // 设置过滤器
+    // Thresholds below are kept for now, but their direct usage in processDanmu was removed.
+    // They might be used by other parts or if AI worker sends raw scores that DanmuCore needs to evaluate.
+    // If they are truly no longer needed anywhere, they can be removed in a future cleanup.
     this.interestingnessThreshold = 0.6;
     this.relevanceThreshold = 0.5;
     this.sentimentFilter = null; // null表示不过滤情感, 1 for positive, -1 for negative
@@ -36,6 +39,17 @@ class DanmuCore {
     // llmConfig is removed
     
     this.logger.info('Danmu Core 模块初始化完成');
+  }
+
+  /**
+   * Sets the operating mode for DanmuCore.
+   * @param {string} mode - The mode to set (e.g., 'default', 'movie', 'education').
+   */
+  setMode(mode) {
+    this.currentMode = mode;
+    this.logger.info(`DanmuCore mode set to: ${this.currentMode}`);
+    // Apply voice preset based on mode. Assumes preset names match mode names.
+    this.applyVoicePreset(this.currentMode); 
   }
 
   // initializeAI, getAIConfig, and isAIServiceInitialized methods are removed
@@ -62,10 +76,26 @@ class DanmuCore {
     // The AI-based scoring (interestingness, relevance, sentiment) and subsequent filtering
     // based on those scores are now assumed to be handled by the AI worker 
     // (danmu-processor.js) before DanmuCore receives the danmu.
-    // Thus, the old threshold and sentiment filtering logic is removed from here.
+    // Thus, the old AI score-based threshold and sentiment filtering logic was removed from here.
 
-    // If the danmu passed basic and platform filters, return it.
-    // Any score-based filtering should have happened in the worker.
+    // Mode-specific filtering
+    switch (this.currentMode) {
+      case 'movie':
+        if (!vulgarityFilter(danmu)) { // Assuming default word list for now
+          // vulgarityFilter logs the reason
+          return null;
+        }
+        break;
+      case 'education':
+        if (!educationContentFilter(danmu)) {
+          // educationContentFilter logs the reason
+          return null;
+        }
+        break;
+      // Default mode has no additional content filters here beyond basic/platform.
+    }
+
+    // If the danmu passed all applicable filters, return it.
     return danmu;
   }
 

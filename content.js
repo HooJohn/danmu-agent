@@ -111,6 +111,10 @@ function getVideoSelector(platform) {
       return 'video.bpx-player-video-element'; // 可能需要更新
     case 'netflix':
       return 'video'; // 可能需要更精确的选择器
+    case 'tencentvideo':
+      return '.txp_video_container video'; // Placeholder, verify actual selector
+    case 'vimeo':
+      return 'video'; // Generic video tag, often works for Vimeo
     // 添加其他平台...
     default:
       return null;

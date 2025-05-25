@@ -14,10 +14,10 @@ import { getPlatform, loadCurrentPlatformAdapter } from '../src/utils/platform.j
 import { initializeVoiceEngine } from '../src/voice/engine.js';
 // 导入时间同步器
 import { TimeSynchronizer } from '../src/core/sync.js';
-// Import danmuCore for accessing its voiceEngine instance if needed,
-// however, BackgroundWorker already has its own this.voiceEngine.
-// For this task, we will use BackgroundWorker's own this.voiceEngine.
-// import { danmuCore } from '../core/index.js'; 
+// 导入 HighlightDetector
+import { HighlightDetector } from '../src/core/highlightDetector.js';
+// 导入 danmuCore 实例
+import { danmuCore } from '../src/core/index.js'; 
 
 class BackgroundWorker {
   constructor() {
@@ -25,6 +25,7 @@ class BackgroundWorker {
     this.voiceEngine = null;
     this.platformAdapter = null;
     this.timeSynchronizer = new TimeSynchronizer(); // Instantiate TimeSynchronizer
+    this.highlightDetector = new HighlightDetector(); // Instantiate HighlightDetector
     this.isInitialized = false;
   }
 
@@ -106,8 +107,14 @@ class BackgroundWorker {
           if (Array.isArray(data)) {
             data.forEach(danmu => {
               this.timeSynchronizer.addDanmu(danmu);
+              // Also pass to HighlightDetector
+              if (danmu.timestamp && danmu.scores) { // Ensure necessary fields are present
+                this.highlightDetector.addDanmu(danmu);
+              } else {
+                logger.warn("Danmu missing timestamp or scores for HighlightDetector:", danmu);
+              }
             });
-            logger.debug(`Added ${data.length} processed danmu to TimeSynchronizer cache.`);
+            logger.debug(`Added ${data.length} processed danmu to TimeSynchronizer and HighlightDetector.`);
           } else {
             logger.warn("Received 'processed_danmu' with non-array data:", data);
           }
@@ -228,13 +235,28 @@ class BackgroundWorker {
             });
           }
           break;
+        
+        case 'SET_MODE':
+          if (data && data.mode) {
+            logger.info(`Background: Received SET_MODE request: ${data.mode}`);
+            danmuCore.setMode(data.mode); // Call setMode on the imported danmuCore instance
+             // Optionally, send confirmation back to popup or content script
+            if (sender.tab) { // From content script
+                // chrome.tabs.sendMessage(sender.tab.id, { type: 'MODE_SET_CONFIRMATION', mode: data.mode });
+            } else { // From popup
+                // chrome.runtime.sendMessage({ type: 'MODE_SET_CONFIRMATION', mode: data.mode });
+            }
+          } else {
+            logger.warn("Invalid 'SET_MODE' data received:", data);
+          }
+          break;
 
         default:
           logger.warn('未知消息类型:', type);
       }
 
-      // 如果不需要异步发送响应，返回 false
-      return false;
+      // 如果不需要异步发送响应，返回 false. Return true if sendResponse will be called asynchronously.
+      return false; 
     });
   }
 }

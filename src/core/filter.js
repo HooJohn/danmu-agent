@@ -56,4 +56,63 @@ function platformFilter(danmu, platform) {
   }
 }
 
-export { basicFilter, platformFilter };
+// Default list of vulgar words. This should ideally be configurable or come from an external source.
+const DEFAULT_VULGAR_WORDS = ['badword1', 'badword2', '示例恶言', '粗俗内容'];
+
+/**
+ * Filters danmu based on a list of vulgar words.
+ * @param {Object} danmu - The danmu object to filter.
+ * @param {Array<string>} [activeWordList=[]] - An optional list of vulgar words. Uses DEFAULT_VULGAR_WORDS if empty.
+ * @returns {boolean} True if the danmu passes (not vulgar), false otherwise.
+ */
+function vulgarityFilter(danmu, activeWordList = []) {
+  if (!danmu || !danmu.content) {
+    return true; // Pass if no content to check
+  }
+  const content = danmu.content.toLowerCase(); // Case-insensitive matching
+  const wordList = activeWordList && activeWordList.length > 0 ? activeWordList : DEFAULT_VULGAR_WORDS;
+
+  for (const word of wordList) {
+    if (content.includes(word.toLowerCase())) {
+      logger.debug(`[VulgarityFilter] Filtered due to word '${word}':`, danmu.content);
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Filters danmu for educational content, keeping relevant items in "education" mode.
+ * This is a placeholder and needs significant refinement for actual educational use.
+ * @param {Object} danmu - The danmu object to filter. Expected to have 'content' and potentially 'scores'.
+ * @returns {boolean} True if the danmu is considered relevant for education mode, false otherwise.
+ */
+function educationContentFilter(danmu) {
+  if (!danmu || !danmu.content) {
+    return false; // Filter out if no content
+  }
+  const content = danmu.content.toLowerCase();
+
+  // Keywords that suggest a question or educational topic
+  const eduKeywords = ['?', '问题', '答案', '知识点', 'how to', 'what is', 'explain', 'define', 'learn', 'teach'];
+  for (const keyword of eduKeywords) {
+    if (content.includes(keyword)) {
+      logger.debug(`[EducationFilter] Kept due to keyword '${keyword}':`, danmu.content);
+      return true;
+    }
+  }
+
+  // Placeholder logic using scores (if available)
+  if (danmu.scores && typeof danmu.scores.relevance === 'number' && typeof danmu.scores.interestingness === 'number') {
+    if (danmu.scores.relevance > 0.6 && danmu.scores.interestingness > 0.5) {
+      logger.debug('[EducationFilter] Kept due to high relevance/interestingness scores:', danmu.content, danmu.scores);
+      return true;
+    }
+  }
+  
+  // Default to filtering out in education mode if no specific criteria are met
+  logger.debug('[EducationFilter] Filtered as not meeting education mode criteria:', danmu.content);
+  return false; 
+}
+
+export { basicFilter, platformFilter, vulgarityFilter, educationContentFilter };

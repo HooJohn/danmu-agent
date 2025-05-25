@@ -16,6 +16,10 @@ function detectPlatform() {
     return "bilibili";
   } else if (hostname.includes("netflix.com")) {
     return "netflix";
+  } else if (hostname.includes("v.qq.com")) {
+    return "tencentvideo";
+  } else if (hostname.includes("vimeo.com")) {
+    return "vimeo";
   }
   
   return "unknown";
@@ -34,6 +38,10 @@ async function loadPlatformAdapter(platform) {
       return await import("../core/adapters/bilibili.js");
     case "netflix":
       return await import("../core/adapters/netflix.js");
+    case "tencentvideo":
+      return await import("../core/adapters/TencentVideoAdapter.js");
+    case "vimeo":
+      return await import("../core/adapters/VimeoAdapter.js");
     default:
       throw new Error(`不支持的平台: ${platform}`);
   }
