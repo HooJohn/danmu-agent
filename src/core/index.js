@@ -11,8 +11,7 @@ import { TimeSynchronizer } from './sync.js';
 // 初始化语音引擎
 import { initializeVoiceEngine } from '../voice/engine.js';
 
-// 导入AI评分系统
-import { initializeScoring, processDanmuList, isServiceInitialized } from '../ai/scoring.js';
+// AI-related imports are removed as scoring is now handled by the worker
 
 class DanmuCore {
   constructor() {
@@ -31,43 +30,14 @@ class DanmuCore {
     // 设置过滤器
     this.interestingnessThreshold = 0.6;
     this.relevanceThreshold = 0.5;
-    this.sentimentFilter = null; // null表示不过滤情感
+    this.sentimentFilter = null; // null表示不过滤情感, 1 for positive, -1 for negative
     
-    // LLM服务配置
-    this.llmConfig = {
-      provider: 'qwen',
-      model: 'qwen2.5-omni-7b',
-      apiKey: 'sk-f95e3f178a464e39bec308d1edd4890e'
-    };
+    // llmConfig is removed
     
     this.logger.info('Danmu Core 模块初始化完成');
   }
 
-  /**
-   * 初始化AI评分系统
-   * @param {Object} config LLM服务配置
-   * @returns {Promise<boolean>} 初始化是否成功
-   */
-  async initializeAI(config) {
-    this.llmConfig = { ...this.llmConfig, ...config };
-    return await initializeScoring(this.llmConfig);
-  }
-  
-  /**
-   * 获取当前AI配置
-   * @returns {Object} AI配置
-   */
-  getAIConfig() {
-    return { ...this.llmConfig, apiKey: undefined }; // 不返回API密钥
-  }
-  
-  /**
-   * 检查AI服务是否已初始化
-   * @returns {boolean} 是否已初始化
-   */
-  isAIServiceInitialized() {
-    return isServiceInitialized();
-  }
+  // initializeAI, getAIConfig, and isAIServiceInitialized methods are removed
 
   /**
    * 处理单条弹幕
@@ -97,12 +67,22 @@ class DanmuCore {
     }
     
     // 应用过滤阈值
-    if (danmu.scores) {
+    // Ensure scores exist before trying to access them
+    if (danmu.scores && danmu.scores.interestingness !== undefined && danmu.scores.relevance !== undefined) {
       const { interestingness, relevance } = danmu.scores;
       
       if (interestingness < this.interestingnessThreshold ||
           relevance < this.relevanceThreshold) {
         return null;
+      }
+    } else {
+      // If there are no scores, and thresholds are set, we might want to filter them out
+      // or handle them as "not scored". For now, let's assume if scores are missing,
+      // they don't pass threshold checks if thresholds are non-zero.
+      // This behavior might need adjustment based on desired UX.
+      if (this.interestingnessThreshold > 0 || this.relevanceThreshold > 0) {
+        // this.logger.debug('Danmu filtered due to missing scores and active thresholds:', danmu);
+        return null; 
       }
     }
     
@@ -111,7 +91,7 @@ class DanmuCore {
 
   /**
    * 批量处理弹幕
-   * @param {Array} danmuList 弹幕列表
+   * @param {Array} danmuList 弹幕列表 (expected to have scores from the worker)
    * @returns {Array} 过滤后的弹幕列表
    */
   async batchProcess(danmuList) {
@@ -119,18 +99,9 @@ class DanmuCore {
       return [];
     }
     
-    // 如果AI服务已初始化，先进行AI评分
-    let processedList = danmuList;
-    if (this.isAIServiceInitialized()) {
-      try {
-        processedList = await processDanmuList(danmuList);
-      } catch (error) {
-        this.logger.error('AI评分处理失败:', error);
-      }
-    }
-    
-    // 应用过滤器
-    return processedList
+    // AI scoring is now done in the worker.
+    // This method now primarily applies filtering based on scores already present.
+    return danmuList
       .map(danmu => this.processDanmu(danmu))
       .filter(danmu => danmu !== null);
   }

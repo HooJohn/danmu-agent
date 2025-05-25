@@ -11,10 +11,14 @@
  * - 注入 UI 元素 (如果需要直接在页面上添加控件)
  */
 
+// Import necessary modules
+import { getPlatform, loadCurrentPlatformAdapter } from '../utils/platform.js';
+import { initializeVoiceEngine } from '../voice/engine.js';
+
 // --- 全局变量与状态 ---
 let currentPlatform = null;
 let videoElement = null;
-let danmuProcessor = null; // 可能需要一个本地的处理器实例或引用
+// let danmuProcessor = null; // Not used in this refactor
 let platformAdapter = null; // 当前平台的适配器实例
 let voiceEngine = null; // 语音引擎实例
 
@@ -43,9 +47,16 @@ async function initializeContentScript() {
     // 3. 加载平台适配器
     platformAdapter = await loadCurrentPlatformAdapter();
     console.log(`平台适配器 (${currentPlatform}) 已加载`);
+
+    // 3.1 Initialize platform adapter if it has an init method
+    if (platformAdapter && typeof platformAdapter.initialize === 'function') {
+      console.log(`Initializing platform adapter (${currentPlatform})...`);
+      await platformAdapter.initialize();
+      console.log(`Platform adapter (${currentPlatform}) initialized.`);
+    }
     
     // 4. 初始化语音引擎
-    voiceEngine = initializeVoiceEngine();
+    voiceEngine = initializeVoiceEngine(); // Assuming this is synchronous or handles its own async
     
     // 5. 初始化弹幕抓取和处理逻辑
     startDanmuProcessing();
@@ -113,56 +124,32 @@ function getVideoSelector(platform) {
  */
 function startDanmuProcessing() {
   console.log("开始弹幕处理...");
-  // 这里需要实现具体的弹幕抓取逻辑，可能使用 MutationObserver 或定时器
-  // 示例：使用定时器轮询 (效率较低，建议用 MutationObserver)
-  setInterval(fetchAndSendDanmu, 2000); // 每 2 秒抓取一次
+  if (platformAdapter && typeof platformAdapter.startCapture === 'function') {
+    platformAdapter.startCapture(handleCapturedDanmu);
+    console.log("弹幕抓取已通过平台适配器启动。");
+  } else {
+    console.error("平台适配器或 startCapture 方法未定义，无法启动弹幕抓取。");
+  }
 }
 
 /**
- * 抓取当前页面的弹幕并发送给 Background Script
+ * 处理由平台适配器抓取到的弹幕列表
+ * @param {Array<Object>} danmuList - 从适配器接收到的弹幕对象列表
  */
-function fetchAndSendDanmu() {
-  if (!platformAdapter && !getDanmuNodes) { // 需要平台适配器或通用的抓取函数
-     console.warn("平台适配器或弹幕抓取函数未定义");
-     // 尝试使用 README 中的示例逻辑 (需要适配)
-     let danmuData = [];
-     if (currentPlatform === 'youtube') {
-        const nodes = document.querySelectorAll(".ytd-live-chat-text-message-renderer"); // 选择器可能需要更新
-        danmuData = Array.from(nodes).map(node => ({ text: node.textContent, time: videoElement?.currentTime, platform: 'youtube' }));
-     } else if (currentPlatform === 'bilibili') {
-        const nodes = document.querySelectorAll(".bili-danmaku"); // 选择器可能需要更新
-        danmuData = Array.from(nodes).map(node => ({ text: node.textContent, time: videoElement?.currentTime, platform: 'bilibili' }));
-     }
-     // ... 其他平台
-
-     if (danmuData.length > 0) {
-        console.log(`抓取到 ${danmuData.length} 条原始弹幕`);
-        // 发送给 Background Script
-        chrome.runtime.sendMessage({ type: 'request_danmu_process', data: danmuData }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error("发送消息给 Background Script 失败:", chrome.runtime.lastError.message);
-          } else {
-            // console.log("收到 Background Script 的响应:", response);
-          }
-        });
-     }
-     return;
+function handleCapturedDanmu(danmuList) {
+  if (danmuList && danmuList.length > 0) {
+    console.log(`Content Script: 收到 ${danmuList.length} 条弹幕从适配器, 发送给 background...`);
+    chrome.runtime.sendMessage({ type: 'request_danmu_process', data: danmuList }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("Content Script: 发送消息给 Background Script 失败:", chrome.runtime.lastError.message);
+      } else {
+        // Optional: console.log("Content Script: 收到 Background Script 的响应:", response);
+      }
+    });
   }
-
-  // 使用适配器抓取弹幕
-  // const rawDanmu = platformAdapter.getDanmu();
-  // if (rawDanmu && rawDanmu.length > 0) {
-  //   console.log(`抓取到 ${rawDanmu.length} 条原始弹幕`);
-  //   // 发送给 Background Script
-  //   chrome.runtime.sendMessage({ type: 'request_danmu_process', data: rawDanmu }, (response) => {
-  //      if (chrome.runtime.lastError) {
-  //        console.error("发送消息给 Background Script 失败:", chrome.runtime.lastError.message);
-  //      } else {
-  //        // console.log("收到 Background Script 的响应:", response);
-  //      }
-  //   });
-  // }
 }
+
+// fetchAndSendDanmu function is removed.
 
 // --- 事件监听 ---
 
@@ -181,7 +168,8 @@ function setupVideoEventListeners() {
 function handleTimeUpdate() {
   const currentTime = videoElement.currentTime;
   // 可以将当前时间发送给 Background Script 用于同步
-  // chrome.runtime.sendMessage({ type: 'video_timeupdate', data: { currentTime } });
+  // Note: Sending on every timeupdate can be frequent. Consider throttling for performance.
+  chrome.runtime.sendMessage({ type: 'video_timeupdate', data: { currentTime } });
   // console.log("Time update:", currentTime); // 避免过于频繁的日志
 }
 
@@ -189,7 +177,7 @@ function handleSeeked() {
   const currentTime = videoElement.currentTime;
   console.log("视频跳转到:", currentTime);
   // 通知 Background Script 处理跳转
-  // chrome.runtime.sendMessage({ type: 'video_seeked', data: { currentTime } });
+  chrome.runtime.sendMessage({ type: 'video_seeked', data: { currentTime } });
 }
 
 function handlePlay() {

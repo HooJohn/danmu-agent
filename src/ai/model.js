@@ -1,8 +1,10 @@
+/*
 /**
  * LLM云服务调用管理器
  * 负责与云端AI服务进行通信，处理弹幕分析和评分
  */
 
+/*
 class LLMServiceManager {
   constructor() {
     this.apiKey = '';
@@ -13,12 +15,13 @@ class LLMServiceManager {
     this.isInitialized = false;
     this.supportedProviders = ['openai', 'anthropic', 'qwen', 'minimax', 'baidu'];
   }
-
+*/
   /**
    * 初始化LLM服务
    * @param {Object} config 配置参数
    * @returns {Promise<boolean>} 初始化是否成功
    */
+/*
   async initialize(config) {
     try {
       const { apiKey, baseUrl, provider, model } = config;
@@ -53,11 +56,12 @@ class LLMServiceManager {
       return false;
     }
   }
-
+*/
   /**
    * 根据提供商获取默认API地址
    * @returns {string} 默认API地址
    */
+/*
   _getDefaultBaseUrl() {
     switch (this.provider) {
       case 'openai':
@@ -74,11 +78,12 @@ class LLMServiceManager {
         return 'https://api.openai.com/v1';
     }
   }
-
+*/
   /**
    * 测试API连接
    * @returns {Promise<boolean>} 连接是否成功
    */
+/*
   async _testConnection() {
     try {
       // 简单的连接测试，根据不同提供商可能需要调整
@@ -96,20 +101,22 @@ class LLMServiceManager {
       return false;
     }
   }
-
+*/
   /**
    * 检查服务是否已初始化
    * @returns {boolean} 是否已初始化
    */
+/*
   isServiceReady() {
     return this.isInitialized;
   }
-
+*/
   /**
    * 评分单条弹幕内容
    * @param {string} text 弹幕文本
    * @returns {Promise<Object>} 评分结果
    */
+/*
   async scoreDanmu(text) {
     if (!this.isServiceReady()) {
       throw new Error('LLM服务未初始化');
@@ -124,12 +131,13 @@ class LLMServiceManager {
       throw error;
     }
   }
-
+*/
   /**
    * 构建评分提示词
    * @param {string} text 弹幕文本
    * @returns {string} 评分提示词
    */
+/*
   _buildScoringPrompt(text) {
     return `请评分以下弹幕文本，评分范围0到1:
 弹幕: "${text}"
@@ -142,12 +150,13 @@ class LLMServiceManager {
 只返回JSON格式，不要有其他文本。格式如下:
 {"sentiment": 0.5, "interestingness": 0.7, "relevance": 0.6}`;
   }
-
+*/
   /**
    * 调用LLM API
    * @param {string} prompt 提示词
    * @returns {Promise<string>} API响应文本
    */
+/*
   async _callLLMApi(prompt) {
     let requestBody;
     let headers = {
@@ -223,11 +232,12 @@ class LLMServiceManager {
     const data = await response.json();
     return this._extractResponseContent(data);
   }
-  
+*/  
   /**
    * 获取API端点
    * @returns {string} API端点URL
    */
+/*
   _getApiEndpoint() {
     switch (this.provider) {
       case 'qwen':
@@ -242,12 +252,13 @@ class LLMServiceManager {
         return `${this.baseUrl}/chat/completions`;
     }
   }
-  
+*/  
   /**
    * 从响应中提取内容
    * @param {Object} responseData API响应数据
    * @returns {string} 提取的内容
    */
+/*
   _extractResponseContent(responseData) {
     switch (this.provider) {
       case 'qwen':
@@ -262,12 +273,13 @@ class LLMServiceManager {
         return responseData.choices[0].message.content;
     }
   }
-
+*/
   /**
    * 解析评分响应
    * @param {string} responseText 响应文本
    * @returns {Object} 解析后的评分
    */
+/*
   _parseScoreResponse(responseText) {
     try {
       // 尝试直接解析JSON
@@ -292,12 +304,13 @@ class LLMServiceManager {
       };
     }
   }
-
+*/
   /**
    * 批量处理多条弹幕
    * @param {Array} danmuList 弹幕数组
    * @returns {Promise<Array>} 处理后的弹幕数组
    */
+/*
   async batchProcess(danmuList) {
     if (!this.isServiceReady()) {
       throw new Error('LLM服务未初始化');
@@ -341,12 +354,13 @@ class LLMServiceManager {
 
     return results;
   }
-
+*/
   /**
    * 构建批量评分提示词
    * @param {Array} danmuList 弹幕数组
    * @returns {string} 批量评分提示词
    */
+/*
   _buildBatchScoringPrompt(danmuList) {
     const danmuTexts = danmuList.map((danmu, index) => `${index+1}. "${danmu.content}"`).join('\n');
     
@@ -366,13 +380,14 @@ ${danmuTexts}
   ...
 ]`;
   }
-
+*/
   /**
    * 解析批量评分响应
    * @param {string} responseText 响应文本
    * @param {number} expectedCount 预期弹幕数量
    * @returns {Array<Object>} 解析后的评分数组
    */
+/*
   _parseBatchScoreResponse(responseText, expectedCount) {
     try {
       // 尝试直接解析JSON
@@ -405,20 +420,22 @@ ${danmuTexts}
       }));
     }
   }
-
+*/
   /**
    * 获取最后一次错误
    * @returns {Error|null} 最后一次错误
    */
+/*
   getLastError() {
     return this.lastError;
   }
-  
+*/  
   /**
    * 更新API配置
    * @param {Object} config 新的配置
    * @returns {Promise<boolean>} 更新是否成功
    */
+/*
   async updateConfig(config) {
     const { apiKey, baseUrl, provider, model } = config;
     
@@ -436,11 +453,12 @@ ${danmuTexts}
     
     return true;
   }
-  
+*/  
   /**
    * 获取当前配置
    * @returns {Object} 当前配置
    */
+/*
   getConfig() {
     return {
       provider: this.provider,
@@ -449,14 +467,16 @@ ${danmuTexts}
       // 不返回apiKey以保护安全
     };
   }
-  
+*/  
   /**
    * 获取支持的LLM提供商列表
    * @returns {Array<string>} 提供商列表
    */
+/*
   getSupportedProviders() {
     return [...this.supportedProviders];
   }
 }
 
 export default LLMServiceManager;
+*/

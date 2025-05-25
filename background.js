@@ -12,12 +12,15 @@ import { logger } from '../src/utils/logger.js';
 import { getPlatform, loadCurrentPlatformAdapter } from '../src/utils/platform.js';
 // 导入语音引擎
 import { initializeVoiceEngine } from '../src/voice/engine.js';
+// 导入时间同步器
+import { TimeSynchronizer } from '../src/core/sync.js';
 
 class BackgroundWorker {
   constructor() {
     this.modelWorker = null;
     this.voiceEngine = null;
     this.platformAdapter = null;
+    this.timeSynchronizer = new TimeSynchronizer(); // Instantiate TimeSynchronizer
     this.isInitialized = false;
   }
 
@@ -62,34 +65,63 @@ class BackgroundWorker {
   initModelWorker() {
     try {
       // 创建 Worker 实例
-      this.modelWorker = new Worker('danmu-processor.js', { type: 'module' });
+      const workerUrl = chrome.runtime.getURL('worker/danmu-processor.js');
+      this.modelWorker = new Worker(workerUrl, { type: 'module' });
       logger.info('模型处理 Worker 初始化成功');
 
       this.modelWorker.onmessage = (event) => {
-        const { type, data } = event.data;
-        logger.debug(`收到来自 Model Worker 的消息: ${type}`, data);
+        const { type, data, success, message } = event.data; // Added success and message for error handling
+        logger.debug(`收到来自 Model Worker 的消息: ${type}`, event.data);
 
         // 处理 Worker 消息
-        if (type === 'processed_danmu') {
-          // 将处理后的弹幕发送回 Content Script
-          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs.length > 0) {
-              chrome.tabs.sendMessage(tabs[0].id, {
-                type: 'display_danmu',
-                data
-              });
-            }
-          });
+        if (type === 'model_loaded') {
+          if (success) {
+            logger.info('模型 Worker 报告模型加载成功。');
+            // Send initial filter configuration
+            const defaultConfig = {
+              interestingnessThreshold: 0.6,
+              relevanceThreshold: 0.5,
+              sentimentFilter: null
+            };
+            this.modelWorker.postMessage({
+              type: 'update_config',
+              config: defaultConfig
+            });
+            logger.info('已发送初始配置到 Model Worker:', defaultConfig);
+          } else {
+            logger.error(`模型 Worker 报告模型加载失败: ${message}`);
+          }
+        } else if (type === 'config_updated') {
+          if (success) {
+            logger.info('模型 Worker 确认配置更新:', data);
+          } else {
+            logger.error(`模型 Worker 报告配置更新失败: ${message}`);
+          }
+        } else if (type === 'processed_danmu') {
+          // Add processed danmu to TimeSynchronizer instead of sending directly
+          if (Array.isArray(data)) {
+            data.forEach(danmu => {
+              this.timeSynchronizer.addDanmu(danmu);
+            });
+            logger.debug(`Added ${data.length} processed danmu to TimeSynchronizer cache.`);
+          } else {
+            logger.warn("Received 'processed_danmu' with non-array data:", data);
+          }
+          // Displaying will now be handled by 'video_timeupdate'
+        } else if (type === 'error') {
+          logger.error(`模型 Worker 报告错误: ${message}`);
         }
       };
 
       this.modelWorker.onerror = (error) => {
-        logger.error('模型 Worker 发生错误:', error.message);
+        logger.error('模型 Worker 发生错误:', error.message, error);
       };
 
+      // Send init message with dynamically resolved model path
+      const modelPathUrl = chrome.runtime.getURL('models/qwen_omni_quantized.onnx');
       this.modelWorker.postMessage({
         type: 'init',
-        modelPath: 'models/qwen_omni_quantized.onnx'
+        modelPath: modelPathUrl
       });
 
     } catch (error) {
@@ -112,7 +144,7 @@ class BackgroundWorker {
           if (this.modelWorker && data) {
             this.modelWorker.postMessage({
               type: 'process_danmu',
-              danmuList: data
+              data: data // Changed from danmuList: data
             });
           } else {
             logger.error('无效的弹幕数据或未初始化的模型 Worker');
@@ -120,22 +152,36 @@ class BackgroundWorker {
           break;
 
         case 'video_timeupdate':
-          // 视频时间更新
-          if (this.modelWorker && data && data.currentTime) {
-            this.modelWorker.postMessage({
-              type: 'time_update',
-              currentTime: data.currentTime
+          // 视频时间更新 - Use TimeSynchronizer
+          if (data && typeof data.currentTime === 'number') {
+            this.timeSynchronizer.processAtTime(data.currentTime, (danmuToDisplay) => {
+              if (danmuToDisplay && danmuToDisplay.length > 0) {
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                  if (tabs.length > 0) {
+                    chrome.tabs.sendMessage(tabs[0].id, {
+                      type: 'display_danmu',
+                      data: danmuToDisplay
+                    }, () => {
+                      if (chrome.runtime.lastError) {
+                        logger.error("Error sending display_danmu message:", chrome.runtime.lastError.message);
+                      }
+                    });
+                  }
+                });
+              }
             });
+          } else {
+            logger.warn("Invalid 'video_timeupdate' data received:", data);
           }
           break;
 
         case 'video_seeked':
-          // 视频跳转
-          if (this.modelWorker && data && data.currentTime) {
-            this.modelWorker.postMessage({
-              type: 'seek_update',
-              currentTime: data.currentTime
-            });
+          // 视频跳转 - Use TimeSynchronizer
+          if (data && typeof data.currentTime === 'number') {
+            this.timeSynchronizer.handleSeek(data.currentTime);
+            logger.info(`Video seeked to: ${data.currentTime}, TimeSynchronizer updated.`);
+          } else {
+            logger.warn("Invalid 'video_seeked' data received:", data);
           }
           break;
 

@@ -1,15 +1,22 @@
+// Import scripts for ONNX runtime and tokenizer
+importScripts("onnxruntime-web.min.js", "tokenizer.js");
+
 /**
  * 弹幕处理Worker
  * 负责在后台线程中处理弹幕分析和筛选
  */
 
+// ONNX session and tokenizer instances
+let session;
+let tokenizer;
+let isModelLoaded = false; // Track model loading status
 
-// 导入依赖
-import { mockScoreDanmu } from '../src/ai/scoring.js';
-
-// 导入依赖
-import { mockScoreDanmu } from '../src/ai/scoring.js';
-import { processingConfig } from '../src/core/index.js';
+// Default processing configuration
+let currentProcessingConfig = {
+  interestingnessThreshold: 0.5,
+  relevanceThreshold: 0.5,
+  sentimentFilter: null // null (disabled), 1 (positive), -1 (negative)
+};
 
 // Worker 主线程消息监听
 self.onmessage = async function(event) {
@@ -18,14 +25,13 @@ self.onmessage = async function(event) {
   // 处理初始化请求
   if (type === 'init') {
     try {
-      // 加载ONNX运行时（真实环境中需实现）
-      // session = await ort.InferenceSession.create(modelPath);
+      // Initialize ONNX runtime session
+      session = await ort.InferenceSession.create(modelPath);
       
-      // 初始化分词器（真实环境中需实现）
-      // const tokenizer = new Tokenizer();
-      // await tokenizer.initialize();
+      // Initialize tokenizer
+      tokenizer = new Tokenizer(); // Assuming Tokenizer is available globally
+      await tokenizer.initialize(); // Assuming an async initialize method
       
-      // 假设模型加载成功
       isModelLoaded = true;
       
       self.postMessage({ 
@@ -35,7 +41,7 @@ self.onmessage = async function(event) {
     } catch (error) {
       self.postMessage({ 
         type: 'error', 
-        data: `模型加载失败: ${error.message}`
+        message: `模型加载失败: ${error.message}` // Consistent error reporting
       });
     }
     return;
@@ -44,10 +50,17 @@ self.onmessage = async function(event) {
   // 更新处理配置
   if (type === 'update_config') {
     if (config) {
-      // 使用当前配置更新
+      currentProcessingConfig = config; // Store the received config
       self.postMessage({ 
         type: 'config_updated',
-        data: processingConfig
+        success: true,
+        data: currentProcessingConfig // Send back the applied config
+      });
+    } else {
+      self.postMessage({
+        type: 'config_updated',
+        success: false,
+        message: 'No config provided in update_config message'
       });
     }
     return;
@@ -57,7 +70,12 @@ self.onmessage = async function(event) {
   if (type === 'process_danmu') {
     try {
       if (!isModelLoaded) {
-        throw new Error('模型未加载，无法处理弹幕');
+        // Post an error message back if the model isn't loaded
+        self.postMessage({
+          type: 'error',
+          message: '模型未加载，无法处理弹幕'
+        });
+        return;
       }
       
       const danmuList = data;
@@ -70,7 +88,7 @@ self.onmessage = async function(event) {
         return;
       }
       
-      // 处理弹幕（真实环境中应使用加载的模型进行处理）
+      // 处理弹幕
       const processedDanmu = await processDanmuWithModel(danmuList);
       
       self.postMessage({
@@ -79,8 +97,8 @@ self.onmessage = async function(event) {
       });
     } catch (error) {
       self.postMessage({ 
-        "type": 'error', 
-        "data": `处理弹幕失败: ${error.message}`
+        type: 'error', 
+        message: `处理弹幕失败: ${error.message}` // Consistent error reporting
       });
     }
     return;
@@ -88,28 +106,65 @@ self.onmessage = async function(event) {
 };
 
 /**
+ * Scores a single danmu text using the ONNX model.
+ * @param {string} text The danmu text to score.
+ * @returns {Promise<Object>} A promise that resolves to an object with scores (e.g., sentiment, interestingness, relevance).
+ */
+async function scoreDanmu(text) {
+  if (!session || !tokenizer) {
+    throw new Error('ONNX session or tokenizer not initialized');
+  }
+  const encodedInput = tokenizer.encode(text); // Assuming encode method exists
+
+  // Prepare feeds (adjust 'input_ids' and 'attention_mask' based on your model's actual input names)
+  const feeds = {
+    // Ensure the names here match your model's expected input names
+    input_ids: new ort.Tensor('int64', encodedInput.input_ids, [1, encodedInput.input_ids.length]),
+    attention_mask: new ort.Tensor('int64', encodedInput.attention_mask, [1, encodedInput.attention_mask.length])
+  };
+
+  // Run inference
+  const results = await session.run(feeds);
+
+  // Process results (this is a placeholder and depends on your model's output structure)
+  // For example, if your model outputs an object with these properties:
+  // const outputTensor = results.output; // or results[modelOutputName]
+  // return {
+  //   sentiment: outputTensor.data[0], 
+  //   interestingness: outputTensor.data[1],
+  //   relevance: outputTensor.data[2]
+  // };
+
+  // Placeholder: adjust based on actual model output structure
+  // Assuming the model has an output named 'output' (common default)
+  // and this output tensor contains the scores in a specific order.
+  const outputData = results.output.data; // Accessing data from the first output tensor
+  return {
+    sentiment: outputData[0],       // Example: first element is sentiment
+    interestingness: outputData[1], // Example: second element is interestingness
+    relevance: outputData[2]        // Example: third element is relevance
+  };
+}
+
+/**
  * 使用模型处理弹幕
  * @param {Array} danmuList 弹幕列表
  * @returns {Promise<Array>} 处理后的弹幕列表
  */
 async function processDanmuWithModel(danmuList) {
-  // 在真实环境中，应使用加载的ONNX模型进行处理
-  // 此处使用模拟的评分逻辑
-  
   const processedList = [];
   
   for (const danmu of danmuList) {
-    // 模拟评分
-    const scores = mockScoreDanmu(danmu.content);
+    const scores = await scoreDanmu(danmu.content); // Use the new scoring function
     
-    // 根据阈值过滤
-    if (scores.interestingness >= processingConfig.interestingnessThreshold &&
-        scores.relevance >= processingConfig.relevanceThreshold) {
+    // 根据阈值过滤 (using locally stored config)
+    if (scores.interestingness >= currentProcessingConfig.interestingnessThreshold &&
+        scores.relevance >= currentProcessingConfig.relevanceThreshold) {
         
-      // 情感过滤（如果启用）
-      if (processingConfig.sentimentFilter !== null) {
-        const isPositive = scores.sentiment > 0.5;
-        const shouldKeepPositive = processingConfig.sentimentFilter > 0;
+      // 情感过滤（如果启用） (using locally stored config)
+      if (currentProcessingConfig.sentimentFilter !== null) {
+        const isPositive = scores.sentiment > 0.5; // Assuming sentiment > 0.5 is positive
+        const shouldKeepPositive = currentProcessingConfig.sentimentFilter > 0;
         
         if (isPositive !== shouldKeepPositive) {
           continue; // 跳过不符合情感过滤条件的弹幕
@@ -125,18 +180,4 @@ async function processDanmuWithModel(danmuList) {
   }
   
   return processedList;
-}
-
-/**
- * 模拟评分函数
- * @param {string} text 弹幕文本
- * @returns {Object} 模拟的评分结果
- */
-function mockScoreDanmu(text) {
-  // 模拟评分逻辑
-  return {
-    sentiment: Math.random(),      // 情感分数
-    interestingness: Math.random(), // 趣味度
-    relevance: Math.random()       // 相关性
-  };
 }

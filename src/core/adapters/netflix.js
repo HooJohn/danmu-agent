@@ -15,11 +15,13 @@ class NetflixAdapter extends DanmuAdapter {
     this.observer = null;
     this.danmuContainerSelector = '.player-timedtext'; // 字幕容器
     this.callback = null; // 存储回调函数
-    this.lastProcessedTime = 0; // 时间戳跟踪
-    // OCR 相关
-    this.lastOcrTime = 0;
-    this.ocrCooldown = 2000; // OCR识别冷却时间（毫秒）
-    this.ocrProcessing = false; // 防止重复处理
+    // this.lastProcessedTime = 0; // Not actively used, can be kept or removed
+    this.lastSubtitle = ''; // To store the last processed subtitle text
+
+    // OCR Related - Commented out as per subtask
+    // this.lastOcrTime = 0;
+    // this.ocrCooldown = 2000; // OCR识别冷却时间（毫秒）
+    // this.ocrProcessing = false; // 防止重复处理
   }
 
   /**
@@ -34,13 +36,14 @@ class NetflixAdapter extends DanmuAdapter {
         return false;
       }
       
-      // 检查是否已加载Tesseract.js（OCR引擎）
-      if (typeof Tesseract === 'undefined') {
-        console.warn('未检测到Tesseract.js，将尝试加载');
-        // 实际应用中应异步加载Tesseract.js
-      }
+      // OCR Related - Commented out as per subtask
+      // // 检查是否已加载Tesseract.js（OCR引擎）
+      // if (typeof Tesseract === 'undefined') {
+      //   console.warn('未检测到Tesseract.js，将尝试加载');
+      //   // 实际应用中应异步加载Tesseract.js
+      // }
       
-      console.log('Netflix弹幕适配器初始化成功');
+      console.log('Netflix弹幕适配器初始化成功 (DOM mode)');
       return true;
     } catch (error) {
       console.error('Netflix适配器初始化失败:', error);
@@ -100,31 +103,39 @@ class NetflixAdapter extends DanmuAdapter {
    * @param {MutationRecord[]} mutationsList
    */
   handleMutations(mutationsList) {
-    const danmuList = [];
+    let processTargetNode = null; // The .player-timedtext node
+
     for (const mutation of mutationsList) {
-      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        mutation.addedNodes.forEach(node => {
-          // 检查添加的节点是否是字幕元素或包含字幕元素
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            if (node.matches && node.matches(this.subtitleSelector)) {
-              // 如果节点本身就是字幕元素
-              const danmu = this.parseSubtitleElement(node);
-              if (danmu) danmuList.push(danmu);
-            } else {
-              // 如果节点是容器，查找其下的字幕元素
-              const subtitleElements = node.querySelectorAll(this.subtitleSelector);
-              subtitleElements.forEach(element => {
-                const danmu = this.parseSubtitleElement(element);
-                if (danmu) danmuList.push(danmu);
-              });
+      // If the observed node itself (this.danmuContainerSelector) has direct child changes
+      // or if a child of it changes, we re-parse the whole container.
+      // Netflix usually replaces spans inside .player-timedtext-text-container
+      if (mutation.target && mutation.target.closest(this.danmuContainerSelector)) {
+         processTargetNode = mutation.target.closest(this.danmuContainerSelector);
+         break; 
+      } else if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+         // Check if any added node is the container itself or within it
+         for (const node of mutation.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.matches && node.matches(this.danmuContainerSelector)) {
+                    processTargetNode = node;
+                    break;
+                }
+                const parentContainer = node.closest(this.danmuContainerSelector);
+                if (parentContainer) {
+                    processTargetNode = parentContainer;
+                    break;
+                }
             }
-          }
-        });
+         }
+         if (processTargetNode) break;
       }
     }
 
-    if (danmuList.length > 0 && typeof this.callback === 'function') {
-      this.callback(danmuList);
+    if (processTargetNode) {
+      const danmu = this.parseSubtitleElement(processTargetNode);
+      if (danmu && typeof this.callback === 'function') {
+        this.callback([danmu]); // Send as a list
+      }
     }
   }
 
@@ -150,35 +161,60 @@ class NetflixAdapter extends DanmuAdapter {
    * @param {Element} element - 字幕元素
    * @returns {object|null} 弹幕对象，如果解析失败则返回 null
    */
-  parseSubtitleElement(element) {
+  parseSubtitleElement(element) { // element is expected to be .player-timedtext
     try {
-        // 获取字幕文本内容
-        const content = element.textContent ? element.textContent.trim() : '';
-        if (!content) return null; // 空内容跳过
+        // Find all text spans within the .player-timedtext-text-container
+        const textSpans = element.querySelectorAll('.player-timedtext-text-container span');
+        if (!textSpans || textSpans.length === 0) {
+          // If no spans, it might be an empty subtitle, clear lastSubtitle
+          if (this.lastSubtitle !== '') {
+             this.lastSubtitle = '';
+             // Optionally, send an empty message to clear display if needed by UI
+             // For now, just returning null means no new danmu.
+          }
+          return null;
+        }
+
+        let fullSubtitleText = [];
+        textSpans.forEach(span => {
+            const text = span.textContent ? span.textContent.trim() : '';
+            if (text) {
+                fullSubtitleText.push(text);
+            }
+        });
+        
+        const content = fullSubtitleText.join(' ').trim();
+
+        if (!content) { // All spans were empty or just whitespace
+          if (this.lastSubtitle !== '') {
+            this.lastSubtitle = '';
+          }
+          return null;
+        }
 
         // 获取视频当前时间
-        const videoElement = document.querySelector('video');
+        const videoElement = document.querySelector('video'); // Netflix usually has one main video tag
         const currentTime = videoElement ? videoElement.currentTime : 0;
 
         // 如果与上一个字幕相同，则跳过
         if (content === this.lastSubtitle) {
           return null;
         }
-        this.lastSubtitle = content;
+        this.lastSubtitle = content; // Update lastSubtitle with the new full text
 
         // 创建弹幕对象
         return {
-          id: Date.now().toString(),
+          id: `netflix_${Date.now()}`, // More specific ID
           platform: 'netflix',
-          author: '字幕',
+          author: '字幕', // Netflix subtitles don't have authors
           content,
-          color: '#FFFFFF',
-          videoTime: currentTime,
+          color: '#FFFFFF', // Default color
+          videoTime: parseFloat(currentTime.toFixed(3)),
           timestamp: Date.now(),
-          isSubtitle: true
+          isSubtitle: true // Flag to indicate this is a subtitle
         };
     } catch (error) {
-      console.error('解析 Netflix 字幕元素失败:', element, error);
+      console.error('解析 Netflix 字幕元素失败:', element, error); // Keep this log
       return null;
     }
   }

@@ -14,10 +14,12 @@ class BilibiliAdapter extends DanmuAdapter {
     this.danmuSelector = '.bili-danmaku, .bpx-player-dm-item'; // 尝试多个可能的选择器
     // this.interval = null; // 不再需要 interval
     this.observer = null; // 添加 MutationObserver 实例
-    // B站弹幕容器选择器 (需要验证和更新, 可能是播放器根元素或弹幕层)
-    this.danmuContainerSelector = '.bpx-player-video-area .bpx-player-sending-area'; // 猜测的选择器
+    // B站弹幕容器选择器 (优先级: .bpx-player-dm-container, .bilibili-player-video-danmaku, then fallback)
+    this.danmuContainerSelector = '.bpx-player-dm-container'; // Preferred modern selector
+    this.danmuContainerSelectorFallback1 = '.bilibili-player-video-danmaku'; // Older common selector
+    this.danmuContainerSelectorFallback2 = '.bpx-player-video-wrap'; // General video area as wider fallback
     this.callback = null; // 存储回调函数
-    // this.lastProcessedTime = 0; // 时间处理逻辑可能需要调整
+    this.videoElement = null; // Cache video element
   }
 
   /**
@@ -50,36 +52,47 @@ class BilibiliAdapter extends DanmuAdapter {
       this.stopCapture(); // 如果已存在，先停止
     }
 
-    // B站弹幕容器可能比较复杂，这个选择器需要仔细验证
-    const targetNode = document.querySelector(this.danmuContainerSelector);
-    if (!targetNode) {
-      console.error(`Bilibili 弹幕容器 (${this.danmuContainerSelector}) 未找到，无法启动 MutationObserver`);
-      // 尝试查找 B站播放器根元素作为备选
-      const playerRoot = document.querySelector('.bpx-player-container');
-      if (playerRoot) {
-         console.log("尝试监听 B站播放器根元素:", playerRoot);
-         this.observer = new MutationObserver((mutationsList) => this.handleMutations(mutationsList));
-         this.observer.observe(playerRoot, { childList: true, subtree: true });
-         console.log(`Bilibili 适配器: MutationObserver 已启动，监听播放器根元素`);
-         this.processExistingDanmu(playerRoot); // 初始处理
-      } else {
-         console.error("也未能找到 B站播放器根元素，无法启动监听");
-         return; // 彻底失败
-      }
-    } else {
-       // 配置 MutationObserver
-       const config = { childList: true, subtree: true }; // 监听子节点变化
-
-       // 创建一个观察器实例并传入回调函数
-       this.observer = new MutationObserver((mutationsList) => this.handleMutations(mutationsList));
-
-       // 开始观察目标节点
-       this.observer.observe(targetNode, config);
-       console.log(`Bilibili 适配器: MutationObserver 已启动，监听 ${this.danmuContainerSelector}`);
-
-       // 初始抓取一次已存在的弹幕
-       this.processExistingDanmu(targetNode);
+    this.videoElement = document.querySelector('video.bpx-player-video-element') || document.querySelector('video');
+    if (!this.videoElement) {
+        console.error('Bilibili 适配器: 未找到视频播放元素。');
+        // return; // Optionally stop if video element is crucial for timestamp fallbacks
     }
+
+    let targetNode = document.querySelector(this.danmuContainerSelector);
+
+    if (!targetNode) {
+      console.warn(`Bilibili 弹幕容器 (${this.danmuContainerSelector}) 未找到, 尝试备选1: ${this.danmuContainerSelectorFallback1}`);
+      targetNode = document.querySelector(this.danmuContainerSelectorFallback1);
+    }
+
+    if (!targetNode) {
+      console.warn(`Bilibili 弹幕容器 (${this.danmuContainerSelectorFallback1}) 未找到, 尝试备选2: ${this.danmuContainerSelectorFallback2}`);
+      targetNode = document.querySelector(this.danmuContainerSelectorFallback2);
+    }
+    
+    if (!targetNode) {
+      // Fallback to the player root if specific danmu containers are not found
+      targetNode = document.querySelector('.bpx-player-container');
+      if (targetNode) {
+        console.warn(`所有特定弹幕容器均未找到, 尝试监听播放器根元素: .bpx-player-container`);
+      } else {
+        console.error(`Bilibili 弹幕容器及播放器根元素均未找到，无法启动 MutationObserver`);
+        return; // 彻底失败
+      }
+    }
+    
+    // 配置 MutationObserver
+    const config = { childList: true, subtree: true }; 
+
+    // 创建一个观察器实例并传入回调函数
+    this.observer = new MutationObserver((mutationsList) => this.handleMutations(mutationsList));
+
+    // 开始观察目标节点
+    this.observer.observe(targetNode, config);
+    console.log(`Bilibili 适配器: MutationObserver 已启动，监听目标:`, targetNode);
+
+    // 初始抓取一次已存在的弹幕
+    this.processExistingDanmu(targetNode);
   }
 
   /**
@@ -152,39 +165,56 @@ class BilibiliAdapter extends DanmuAdapter {
    */
   parseDanmuElement(element) {
     try {
-        // 获取弹幕ID，用于去重 (B站可能有 data-dm-id 或类似属性)
-        const id = element.dataset.id || element.getAttribute('id') || Date.now() + Math.random().toString(36).substring(2, 9);
+        // Danmu ID: Try 'data-id', then 'id' attribute, then generate
+        let id = element.dataset.id || element.getAttribute('id');
+        if (!id) {
+            id = `bili_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        }
 
-        // 获取弹幕文本内容
+        // Content: Trimmed text content. Consider if a child selector is more precise.
         const content = element.textContent ? element.textContent.trim() : '';
-        if (!content) return null; // 没有内容则跳过
+        if (!content) return null;
 
-        // 获取弹幕颜色
-        const color = element.style.color || '#FFFFFF'; // 默认为白色
+        // Color: From style attribute, default to white
+        const color = element.style.color || '#FFFFFF';
 
-        // 尝试获取弹幕在视频中的时间 (B站可能通过 data 属性或计算得出)
-        // const videoTimeAttr = element.dataset.time;
-        // let videoTime = videoTimeAttr ? parseFloat(videoTimeAttr) : null;
+        // Video Timestamp (videoTime):
+        let videoTime = null;
+        // Try 'progress' attribute (often in milliseconds)
+        const progressAttr = element.getAttribute('progress');
+        if (progressAttr) {
+            videoTime = parseFloat(progressAttr) / 1000; // Convert ms to seconds
+        } else if (element.dataset.time) {
+            videoTime = parseFloat(element.dataset.time);
+        } else if (element.dataset.ts) {
+            videoTime = parseFloat(element.dataset.ts);
+        }
 
-        // 备选：使用当前视频时间
-        // if (videoTime === null) {
-          const videoElement = document.querySelector('video.bpx-player-video-element'); // B站视频选择器
-          const currentTime = videoElement ? videoElement.currentTime : 0;
-        //   videoTime = currentTime;
-        // }
+        // Fallback to current video time if no specific timestamp found on danmu element
+        if (videoTime === null || isNaN(videoTime)) {
+            if (this.videoElement) {
+                videoTime = this.videoElement.currentTime;
+            } else {
+                // Attempt to get video element again if not cached (e.g., if startCapture failed early)
+                const currentVideoElement = document.querySelector('video.bpx-player-video-element') || document.querySelector('video');
+                videoTime = currentVideoElement ? currentVideoElement.currentTime : 0;
+            }
+        }
+        
+        // User ID / Author: Try 'data-user-id' or 'data-uid'
+        const authorId = element.dataset.userId || element.dataset.uid || '匿名用户';
 
-        // 创建弹幕对象
         return {
           id,
           platform: 'bilibili',
-          author: '匿名用户', // B站通常不显示发送者
+          author: authorId, // Use extracted ID or default
           content,
           color,
-          videoTime: currentTime, // 使用抓取时的时间，后续可能需要同步模块处理
+          videoTime: parseFloat(videoTime.toFixed(3)), // Keep 3 decimal places for consistency
           timestamp: Date.now()
         };
     } catch (error) {
-      console.error('解析 Bilibili 弹幕元素失败:', element, error);
+      console.error('解析 Bilibili 弹幕元素失败:', element, error); // Keep this log
       return null;
     }
   }
