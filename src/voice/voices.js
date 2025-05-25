@@ -3,7 +3,7 @@
  * 处理不同场景下的语音风格设置
  */
 
-import { getVoiceEngine } from './engine.js';
+// import { getVoiceEngine } from './engine.js'; // Removed as VoiceEngine instance is passed directly
 import { logger } from '../utils/logger.js';
 
 // 语音场景预设
@@ -73,54 +73,58 @@ function selectVoiceStyleByContent(danmu) {
   }
   
   // 默认风格
-  return VOICE_PRESETS.default;
+  return {
+    rate: VOICE_PRESETS.default.rate,
+    pitch: VOICE_PRESETS.default.pitch,
+    volume: VOICE_PRESETS.default.volume
+  };
 }
 
 /**
  * 应用平台特定的语音预设
- * @param {string} platform 平台名称
+ * @param {Object} voiceEngineInstance - An instance of the VoiceEngine.
+ * @param {string} platform - 平台名称 (e.g., 'bilibili', 'youtube').
  * @returns {boolean} 设置是否成功
  */
-function applyPlatformPreset(platform) {
-  const engine = getVoiceEngine();
-  
-  if (!engine || !engine.initialized) {
-    logger.error('语音引擎未初始化，无法应用预设');
+function applyPlatformPreset(voiceEngineInstance, platform) {
+  if (!voiceEngineInstance || !voiceEngineInstance.initialized) {
+    logger.error('语音引擎实例未提供或未初始化，无法应用预设');
     return false;
   }
   
   // 获取平台预设
   const preset = VOICE_PRESETS[platform] || VOICE_PRESETS.default;
   
-  // 应用预设
-  engine.setParams(preset);
+  // 应用预设 (rate, pitch, volume)
+  voiceEngineInstance.setParams(preset);
   
-  // 为特定平台选择合适的语音
+  // 为特定平台选择合适的语音 (voice name/object)
   switch (platform) {
     case 'bilibili':
       // 为B站模式尝试选择女声
-      const femaleVoice = engine.voices.find(voice => 
+      const femaleVoice = voiceEngineInstance.voices.find(voice => 
         (voice.lang === 'zh-CN' || voice.lang === 'zh-TW') && 
-        voice.name.includes('Female')
+        (voice.name.includes('Female') || voice.name.includes('女') || voice.name.includes('xiaoxiao')) // Added more keywords
       );
       if (femaleVoice) {
-        engine.setVoice(femaleVoice);
+        voiceEngineInstance.setVoice(femaleVoice.name); // Pass voice name
       }
       break;
       
     case 'movie':
       // 为电影模式尝试选择男声
-      const maleVoice = engine.voices.find(voice => 
+      const maleVoice = voiceEngineInstance.voices.find(voice => 
         (voice.lang === 'zh-CN' || voice.lang === 'zh-TW') && 
-        voice.name.includes('Male')
+        (voice.name.includes('Male') || voice.name.includes('男')) // Added more keywords
       );
       if (maleVoice) {
-        engine.setVoice(maleVoice);
+        voiceEngineInstance.setVoice(maleVoice.name); // Pass voice name
       }
       break;
+    // Add other platforms if needed
   }
   
-  logger.info(`已应用 ${platform} 平台语音预设`);
+  logger.info(`已应用 ${platform} 平台语音预设及特定语音选择（如果匹配成功）。`);
   return true;
 }
 

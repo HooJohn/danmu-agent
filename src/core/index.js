@@ -3,13 +3,14 @@
  */
 
 // 导入依赖模块
-import { setupMessageQueue } from './messageQueue.js';
+// import { setupMessageQueue } from './messageQueue.js'; // Removed as per task
 import { logger } from '../utils/logger.js';
 import { basicFilter, platformFilter } from './filter.js';
 import { TimeSynchronizer } from './sync.js';
 
 // 初始化语音引擎
 import { initializeVoiceEngine } from '../voice/engine.js';
+import { applyPlatformPreset } from '../voice/voices.js'; // Added import
 
 // AI-related imports are removed as scoring is now handled by the worker
 
@@ -18,8 +19,8 @@ class DanmuCore {
     // 初始化日志
     this.logger = logger;
     
-    // 初始化消息队列
-    this.danmuQueue = setupMessageQueue();
+    // 初始化消息队列 - Removed as per task
+    // this.danmuQueue = setupMessageQueue(); 
     
     // 初始化时间同步
     this.timeSynchronizer = new TimeSynchronizer();
@@ -47,45 +48,24 @@ class DanmuCore {
   processDanmu(danmu) {
     // 基本过滤
     if (!basicFilter(danmu)) {
+      // basicFilter already logs the reason
       return null;
     }
     
     // 平台专属过滤
-    const filtered = platformFilter(danmu, danmu.platform);
-    if (!filtered) {
+    // danmu.platform should be provided by the adapter
+    if (!platformFilter(danmu, danmu.platform)) {
+      // platformFilter already logs the reason
       return null;
     }
     
-    // 情感过滤
-    if (this.sentimentFilter !== null && danmu.scores && danmu.scores.sentiment !== undefined) {
-      const isPositive = danmu.scores.sentiment > 0.5;
-      const shouldKeepPositive = this.sentimentFilter > 0;
-      
-      if (isPositive !== shouldKeepPositive) {
-        return null;
-      }
-    }
-    
-    // 应用过滤阈值
-    // Ensure scores exist before trying to access them
-    if (danmu.scores && danmu.scores.interestingness !== undefined && danmu.scores.relevance !== undefined) {
-      const { interestingness, relevance } = danmu.scores;
-      
-      if (interestingness < this.interestingnessThreshold ||
-          relevance < this.relevanceThreshold) {
-        return null;
-      }
-    } else {
-      // If there are no scores, and thresholds are set, we might want to filter them out
-      // or handle them as "not scored". For now, let's assume if scores are missing,
-      // they don't pass threshold checks if thresholds are non-zero.
-      // This behavior might need adjustment based on desired UX.
-      if (this.interestingnessThreshold > 0 || this.relevanceThreshold > 0) {
-        // this.logger.debug('Danmu filtered due to missing scores and active thresholds:', danmu);
-        return null; 
-      }
-    }
-    
+    // The AI-based scoring (interestingness, relevance, sentiment) and subsequent filtering
+    // based on those scores are now assumed to be handled by the AI worker 
+    // (danmu-processor.js) before DanmuCore receives the danmu.
+    // Thus, the old threshold and sentiment filtering logic is removed from here.
+
+    // If the danmu passed basic and platform filters, return it.
+    // Any score-based filtering should have happened in the worker.
     return danmu;
   }
 
@@ -161,8 +141,31 @@ class DanmuCore {
    */
   setVoiceConfig(config) {
     if (this.voiceEngine && config) {
-      this.voiceEngine.setParams(config);
+      // Set rate, pitch, volume
+      this.voiceEngine.setParams({ 
+        rate: config.rate, 
+        pitch: config.pitch, 
+        volume: config.volume 
+      });
+
+      // Set specific voice by name if provided
+      if (config.voiceName) {
+        this.voiceEngine.setVoice(config.voiceName);
+      }
       this.logger.info('语音配置已更新:', config);
+    }
+  }
+
+  /**
+   * Applies a platform-specific voice preset.
+   * @param {string} platform - The platform identifier (e.g., 'bilibili', 'youtube').
+   */
+  applyVoicePreset(platform) {
+    if (this.voiceEngine) {
+      applyPlatformPreset(this.voiceEngine, platform);
+      this.logger.info(`语音预设已应用于平台: ${platform}`);
+    } else {
+      this.logger.warn('尝试应用语音预设但语音引擎未初始化。');
     }
   }
 }

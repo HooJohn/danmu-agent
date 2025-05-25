@@ -14,6 +14,10 @@ import { getPlatform, loadCurrentPlatformAdapter } from '../src/utils/platform.j
 import { initializeVoiceEngine } from '../src/voice/engine.js';
 // 导入时间同步器
 import { TimeSynchronizer } from '../src/core/sync.js';
+// Import danmuCore for accessing its voiceEngine instance if needed,
+// however, BackgroundWorker already has its own this.voiceEngine.
+// For this task, we will use BackgroundWorker's own this.voiceEngine.
+// import { danmuCore } from '../core/index.js'; 
 
 class BackgroundWorker {
   constructor() {
@@ -155,9 +159,10 @@ class BackgroundWorker {
           // 视频时间更新 - Use TimeSynchronizer
           if (data && typeof data.currentTime === 'number') {
             this.timeSynchronizer.processAtTime(data.currentTime, (danmuToDisplay) => {
+              // Send to content script for display
               if (danmuToDisplay && danmuToDisplay.length > 0) {
                 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                  if (tabs.length > 0) {
+                  if (tabs.length > 0 && tabs[0].id) {
                     chrome.tabs.sendMessage(tabs[0].id, {
                       type: 'display_danmu',
                       data: danmuToDisplay
@@ -166,8 +171,26 @@ class BackgroundWorker {
                         logger.error("Error sending display_danmu message:", chrome.runtime.lastError.message);
                       }
                     });
+                  } else {
+                    logger.warn("No active tab found or tab ID missing for sending display_danmu.");
                   }
                 });
+
+                // Speak the danmu content
+                if (this.voiceEngine && this.voiceEngine.initialized) {
+                  danmuToDisplay.forEach(danmu => {
+                    if (danmu && danmu.content) {
+                      logger.debug(`Background: Requesting speech for danmu: "${danmu.content.substring(0,30)}"`);
+                      this.voiceEngine.speak(danmu.content); 
+                      // Optional: Apply platform preset before speaking
+                      // if (danmu.platform && danmuCore) { // danmuCore would need to be available here
+                      //   danmuCore.applyVoicePreset(danmu.platform);
+                      // }
+                    }
+                  });
+                } else {
+                  logger.warn("VoiceEngine not available or not initialized, cannot speak danmu.");
+                }
               }
             });
           } else {

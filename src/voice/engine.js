@@ -5,6 +5,7 @@
 
 // 导入依赖
 import { logger } from '../utils/logger.js';
+import { selectVoiceStyleByContent } from './voices.js'; // Added import
 
 class VoiceEngine {
   constructor() {
@@ -185,20 +186,48 @@ class VoiceEngine {
     
     // 如果队列已满，删除最早的内容
     if (this.queue.length >= this.maxQueueSize) {
-      this.queue.shift();
+      this.queue.shift(); // Remove the oldest task
+      logger.debug('VoiceEngine: Queue full, removed oldest task.');
+    }
+
+    // Determine voice based on language
+    let targetVoice = options.voice || this.selectedVoice; // Default
+    const detectedLang = this.detectLanguage(text);
+    logger.debug(`VoiceEngine: Detected language '${detectedLang}' for text: "${text.substring(0, 20)}..."`);
+
+    if (detectedLang !== 'unknown' && this.voices && this.voices.length > 0) {
+      const languageAppropriateVoice = this.voices.find(v => 
+        v.lang.startsWith(detectedLang)
+      );
+      if (languageAppropriateVoice) {
+        targetVoice = languageAppropriateVoice;
+        logger.debug(`VoiceEngine: Found language-appropriate voice: ${targetVoice.name} (${targetVoice.lang})`);
+      } else {
+        logger.debug(`VoiceEngine: No specific voice found for lang '${detectedLang}', using default/selected: ${targetVoice ? targetVoice.name : 'N/A'}`);
+      }
     }
     
-    // 创建播放任务
+    // Determine dynamic style based on content
+    const dynamicStyle = selectVoiceStyleByContent({ content: text });
+    logger.debug('VoiceEngine: Dynamic style selected:', dynamicStyle);
+
+    // Create播放任务, merging options: dynamicStyle > task options > instance defaults
     const task = {
       text,
       options: {
-        ...options,
-        voice: options.voice || this.selectedVoice,
-        rate: options.rate || this.rate,
-        pitch: options.pitch || this.pitch,
-        volume: options.volume || this.volume
+        voice: targetVoice, // Voice determined above
+        rate: dynamicStyle.rate !== undefined ? dynamicStyle.rate : (options.rate !== undefined ? options.rate : this.rate),
+        pitch: dynamicStyle.pitch !== undefined ? dynamicStyle.pitch : (options.pitch !== undefined ? options.pitch : this.pitch),
+        volume: dynamicStyle.volume !== undefined ? dynamicStyle.volume : (options.volume !== undefined ? options.volume : this.volume),
+        // Spread other potential options from the input `options` if any
+        ...options 
       }
     };
+    // Ensure the 'voice' in task.options is the one determined above, not overridden by spread options if options.voice was different.
+    task.options.voice = targetVoice;
+
+
+    logger.debug('VoiceEngine: Prepared task for queue:', { text: task.text, voice: task.options.voice ? task.options.voice.name : 'N/A', rate: task.options.rate, pitch: task.options.pitch, volume: task.options.volume });
     
     // 添加到队列
     this.queue.push(task);
