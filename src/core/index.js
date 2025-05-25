@@ -28,6 +28,7 @@ class DanmuCore {
     // 初始化语音引擎
     this.voiceEngine = initializeVoiceEngine();
     this.currentMode = 'default'; // Initialize currentMode
+    this.currentVulgarityKeywords = []; // Added for dynamic vulgarity keywords
     
     // Thresholds below are kept for now, but their direct usage in processDanmu was removed.
     // They might be used by other parts or if AI worker sends raw scores that DanmuCore needs to evaluate.
@@ -39,6 +40,19 @@ class DanmuCore {
     // llmConfig is removed
     
     this.logger.info('Danmu Core 模块初始化完成');
+  }
+
+  /**
+   * Updates filter-related settings for DanmuCore.
+   * @param {Object} settings - An object containing filter settings to update.
+   *                            Example: { vulgarityKeywords: ["word1", "word2"] }
+   */
+  updateFilterSettings(settings) {
+    if (settings.vulgarityKeywords !== undefined) {
+        this.currentVulgarityKeywords = Array.isArray(settings.vulgarityKeywords) ? [...settings.vulgarityKeywords] : [];
+        this.logger.info('DanmuCore: Vulgarity keywords updated', this.currentVulgarityKeywords);
+    }
+    // Add other filter-related settings here if DanmuCore needs them directly
   }
 
   /**
@@ -81,7 +95,7 @@ class DanmuCore {
     // Mode-specific filtering
     switch (this.currentMode) {
       case 'movie':
-        if (!vulgarityFilter(danmu)) { // Assuming default word list for now
+        if (!vulgarityFilter(danmu, this.currentVulgarityKeywords)) { // Pass the dynamic list
           // vulgarityFilter logs the reason
           return null;
         }

@@ -35,13 +35,23 @@ const DEFAULT_SETTINGS = {
 class BackgroundWorker {
   constructor() {
     this.modelWorker = null;
-    this.voiceEngine = null;
+    // this.voiceEngine = null; // Will be assigned from danmuCore
     this.platformAdapter = null;
     this.timeSynchronizer = new TimeSynchronizer();
-    this.highlightDetector = new HighlightDetector();
-    this.settings = { ...DEFAULT_SETTINGS }; // Initialize with default settings
-    this.isModelReady = false; // Flag for AI model readiness
+    this.highlightDetector = new HighlightDetector(); 
+    this.settings = { ...DEFAULT_SETTINGS }; 
+    this.isModelReady = false; 
+    this.activeTabId = null; 
     this.isInitialized = false;
+
+    // Use danmuCore's voice engine instance
+    this.voiceEngine = danmuCore.voiceEngine; 
+    if (!this.voiceEngine) {
+        logger.error("VoiceEngine on danmuCore is not available at BackgroundWorker construction!");
+        // Fallback or error handling if danmuCore's voiceEngine isn't ready,
+        // though typically singletons are available upon import.
+        // For now, we'll proceed, but operations on this.voiceEngine might fail if it's truly null.
+    }
   }
 
   /**
@@ -51,15 +61,19 @@ class BackgroundWorker {
     try {
       const result = await chrome.storage.local.get(STORAGE_KEY);
       if (result[STORAGE_KEY]) {
-        // Merge loaded settings with defaults to ensure all keys are present
-        this.settings = { ...DEFAULT_SETTINGS, ...result[STORAGE_KEY] };
-        // Ensure nested objects like aiFilterConfig are also merged properly
-        if (result[STORAGE_KEY].aiFilterConfig) {
-            this.settings.aiFilterConfig = { ...DEFAULT_SETTINGS.aiFilterConfig, ...result[STORAGE_KEY].aiFilterConfig };
+        const storedSettings = result[STORAGE_KEY];
+        // Start with defaults, then overwrite with stored top-level keys
+        this.settings = { ...DEFAULT_SETTINGS, ...storedSettings };
+        // Specifically handle nested objects like aiFilterConfig for a deep merge
+        if (storedSettings.aiFilterConfig) {
+            this.settings.aiFilterConfig = { ...DEFAULT_SETTINGS.aiFilterConfig, ...storedSettings.aiFilterConfig };
         }
-        logger.info('Settings loaded from storage:', this.settings);
+        // Ensure other nested objects, if any in future, are handled similarly.
+        logger.info('Settings loaded from storage and merged with defaults:', this.settings);
       } else {
         logger.info('No settings found in storage, using defaults and saving them.');
+        // Ensure this.settings still refers to a fresh copy of DEFAULT_SETTINGS here before saving
+        this.settings = { ...DEFAULT_SETTINGS, aiFilterConfig: { ...DEFAULT_SETTINGS.aiFilterConfig } }; 
         await chrome.storage.local.set({ [STORAGE_KEY]: this.settings });
       }
     } catch (error) {
@@ -74,11 +88,31 @@ class BackgroundWorker {
     await this.loadSettings(); // Load settings first
 
     try {
-      // 初始化语音引擎
-      this.voiceEngine = initializeVoiceEngine({ volume: this.settings.voiceVolume });
-      // Assuming VoiceEngine's initialize method loads voices and then we can set voiceEnabled
-      // This part of setting voice name and enabled status will be more robust after model_loaded or voice engine signals readiness
-      logger.info('语音引擎初步配置应用完毕。等待完整初始化...');
+      // VoiceEngine is now assigned in constructor from danmuCore.
+      // Ensure it's initialized here if its initialize method is separate and idempotent.
+      if (this.voiceEngine && typeof this.voiceEngine.initialize === 'function') {
+        // Assuming danmuCore.voiceEngine.initialize() has been called by DanmuCore's own init,
+        // or it's safe to call multiple times. If not, this might need adjustment.
+        // For now, let's ensure it's called to load voices if not already.
+        await this.voiceEngine.initialize(); 
+        logger.info('VoiceEngine (from danmuCore) re-checked/initialized in BackgroundWorker.');
+      } else if (!this.voiceEngine) {
+        logger.error("CRITICAL: VoiceEngine is not available on danmuCore during BackgroundWorker.initialize().");
+        // Handle this case, perhaps by stopping initialization or using a stub.
+        return; // Stop further initialization if voiceEngine is critical and missing.
+      }
+
+      // Apply initial settings to DanmuCore and its VoiceEngine
+      danmuCore.setMode(this.settings.currentMode);
+      danmuCore.setVoiceConfig({ 
+          volume: this.settings.voiceVolume, 
+          voiceName: this.settings.voiceName 
+      });
+      if (this.voiceEngine && typeof this.voiceEngine.setVoiceEnabled === 'function') {
+          this.voiceEngine.setVoiceEnabled(this.settings.voiceEnabled);
+      } else {
+          logger.warn('VoiceEngine or setVoiceEnabled not available in initialize to set initial voice enabled state.');
+      }
       
       // 获取当前平台
       const platform = await getPlatform();
@@ -94,15 +128,12 @@ class BackgroundWorker {
       logger.info(`平台适配器 (${platform}) 加载成功`);
       
       // 初始化模型 Worker
-      this.initModelWorker(); // This will eventually trigger sending AI config and other settings
+      this.initModelWorker(); 
       
       // 设置消息监听器
       this.setupMessageListeners();
-
-      // Apply other settings that don't depend on model worker readiness
-      danmuCore.setMode(this.settings.currentMode); 
-      // Voice name and enabled status applied more robustly after voice engine and model worker are ready
       
+      this.setupTabListeners(); // Call setupTabListeners
       this.isInitialized = true;
       logger.info('Background Worker 初始化完成');
     } catch (error) {
@@ -128,33 +159,34 @@ class BackgroundWorker {
         if (type === 'model_loaded') {
           if (success) {
             this.isModelReady = true;
-            logger.info('Model loaded by worker. Sending initial AI filter config.');
+            logger.info('AI Model loaded by worker. Sending initial AI filter config.');
             this.modelWorker.postMessage({
                 type: 'update_config',
                 config: this.settings.aiFilterConfig
             });
-            
-            // Apply other initial settings to danmuCore and voiceEngine
-            danmuCore.setMode(this.settings.currentMode); // Redundant if already set in initialize, but safe
-            
-            // Ensure voice engine is fully initialized before setting voice name and enabled status
-            this.voiceEngine.initialize().then(() => {
-                logger.info('Voice engine fully initialized. Applying stored voice settings.');
-                if (this.settings.voiceName) {
-                    danmuCore.setVoiceConfig({ voiceName: this.settings.voiceName });
-                }
-                if (typeof this.voiceEngine.setVoiceEnabled === 'function') {
-                    this.voiceEngine.setVoiceEnabled(this.settings.voiceEnabled);
-                } else {
-                    logger.warn('this.voiceEngine.setVoiceEnabled is not a function.');
-                }
-                 // Volume was set at VoiceEngine construction, ensure it's correct
-                danmuCore.setVoiceConfig({ volume: this.settings.voiceVolume });
-            }).catch(err => logger.error("Error during voice engine full initialization for settings apply:", err));
 
+            // Ensure voice engine is fully initialized (voices loaded) before applying voice name
+            if (this.voiceEngine && typeof this.voiceEngine.initialize === 'function') {
+                // Assuming .initialize() is idempotent or handles multiple calls gracefully.
+                // It's crucial that voices are loaded before trying to set a specific voice by name.
+                this.voiceEngine.initialize().then(() => { 
+                    logger.info('Voice engine fully initialized (voices loaded). Applying specific voice settings.');
+                    // Re-apply voice config from settings, as specific voice might only be settable now
+                    danmuCore.setVoiceConfig({ 
+                        voiceName: this.settings.voiceName,
+                        volume: this.settings.voiceVolume // Re-affirm volume
+                    });
+                    // Re-affirm enabled state
+                    if (typeof this.voiceEngine.setVoiceEnabled === 'function') {
+                         this.voiceEngine.setVoiceEnabled(this.settings.voiceEnabled);
+                    }
+                }).catch(err => logger.error("Error during voice engine full initialization for settings apply:", err));
+            } else {
+                 logger.warn('VoiceEngine or its initialize method not available post model load.');
+            }
           } else {
             this.isModelReady = false;
-            logger.error(`模型 Worker 报告模型加载失败: ${message}`);
+            logger.error(`Model worker failed to load AI model: ${message}`);
           }
         } else if (type === 'config_updated') {
           if (success) {
@@ -391,6 +423,51 @@ class BackgroundWorker {
 }
 
 // 初始化 Background Worker
+const backgroundWorker = new BackgroundWorker();
+// initialize is async, top-level await is not allowed in service workers.
+// Chrome handles this by keeping the worker alive until the promise resolves.
+backgroundWorker.initialize().then(() => {
+  logger.info("BackgroundWorker initialization promise resolved.");
+}).catch(error => {
+  logger.error("BackgroundWorker initialization failed:", error);
+});
+
+  setupTabListeners() {
+    chrome.tabs.onActivated.addListener(activeInfo => {
+      this.activeTabId = activeInfo.tabId;
+      logger.debug(`Active tab changed to: ${this.activeTabId}`);
+    });
+
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      if (tab.active && changeInfo.status === 'complete') {
+        if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+          this.activeTabId = tabId;
+          logger.debug(`Active tab updated and loaded: ${this.activeTabId}, URL: ${tab.url}`);
+        }
+      }
+    });
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0 && tabs[0].id) {
+           if (tabs[0].url && (tabs[0].url.startsWith('http://') || tabs[0].url.startsWith('https://'))) {
+              this.activeTabId = tabs[0].id;
+              logger.debug(`Initial active tab: ${this.activeTabId}, URL: ${tabs[0].url}`);
+           }
+      }
+    });
+  }
+} // This closing brace for BackgroundWorker class might be misplaced if setupTabListeners is outside.
+// It should be inside the class. Let's assume the previous diff structure was correct and this is inside.
+// The diff tool should handle placing it correctly if the search block is precise.
+
+// The part below for initializing backgroundWorker is assumed to be outside the class definition.
+// const backgroundWorker = new BackgroundWorker();
+// backgroundWorker.initialize().then(() => {
+// logger.info("BackgroundWorker initialization promise resolved.");
+// }).catch(error => {
+// logger.error("BackgroundWorker initialization failed:", error);
+// });
+// Re-pasting the end of the file correctly:
 const backgroundWorker = new BackgroundWorker();
 // initialize is async, top-level await is not allowed in service workers.
 // Chrome handles this by keeping the worker alive until the promise resolves.

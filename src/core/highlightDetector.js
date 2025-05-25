@@ -9,7 +9,17 @@ class HighlightDetector {
     this.densityThreshold = 10;   // Number of danmu in window to be considered dense
     this.intensityThreshold = 0.7;// Average "intensity" score threshold
     this.logger = logger;
-    this.logger.info('HighlightDetector initialized.');
+    this.isEnabled = true; // Default to enabled
+    this.logger.info('HighlightDetector initialized. Detection enabled by default.');
+  }
+
+  /**
+   * Sets the enabled state of the highlight detector.
+   * @param {boolean} enabled - True to enable, false to disable.
+   */
+  setEnabled(enabled) {
+    this.isEnabled = !!enabled; // Ensure boolean
+    this.logger.info(`HighlightDetector is now ${this.isEnabled ? 'ENABLED' : 'DISABLED'}`);
   }
 
   /**
@@ -21,6 +31,11 @@ class HighlightDetector {
    * @param {Object} danmu - The danmu message object.
    */
   addDanmu(danmu) {
+    if (!this.isEnabled) {
+      // this.logger.debug('HighlightDetector: AddDanmu called but detector is disabled.'); // Optional: too noisy
+      return; // Do nothing if not enabled
+    }
+
     if (!danmu || typeof danmu.timestamp !== 'number' || !danmu.scores) {
       this.logger.warn('HighlightDetector: Invalid danmu object received.', danmu);
       return;
