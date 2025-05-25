@@ -1,0 +1,28 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Global Rules for Danmu Agent
+
+## 核心规则
+- **语言要求**: 所有代码注释和文档必须使用中文。
+- **代码规范**:
+  - JavaScript/TypeScript: 遵循 Airbnb 代码风格（通过 ESLint 强制检查）。
+  - CSS: 使用 BEM 命名规范。
+- **测试要求**:
+  - 每个核心功能需配套单元测试（覆盖率 ≥ 80%）。
+  - 性能基准测试：内存占用 ≤150MB，弹幕处理延迟 ≤800ms。
+- **优先级**:
+  - P0: 多平台弹幕抓取（YouTube、B站、腾讯视频、Netflix）
+  - P1: AI动态筛选
+  - P2: 语音播报
+  - P3: 用户界面和体验优化
+
+## 多平台支持
+- 支持主流视频网站（YouTube、B站、腾讯视频、Netflix、Vimeo等）
+- 实现统一的弹幕抓取、处理和播报体验
+- 通过适配器模式实现平台扩展
+
+## Globs (适用范围)
+*.*

@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Danmu Agent 规则索引
+
+## 规则文件列表
+
+| 规则文件 | 描述 | 适用范围 |
+|----------|------|----------|
+| global.mdc | 全局代码规范与优先级 | 所有文件 |
+| project-structure.mdc | 项目结构与文件组织 | 所有源代码文件 |
+| core-engine.mdc | 弹幕引擎与AI模型集成 | src/core/, src/ai/ |
+| cross-platform.mdc | 跨平台支持与适配 | src/core/adapters/ |
+| voice-synthesis.mdc | 语音合成与处理 | src/voice/ |
+| ui-design.mdc | 用户界面与交互 | src/popup/, assets/styles/ |
+| performance.mdc | 性能优化与兼容性 | src/utils/, workers/ |
+| testing-compliance.mdc | 测试与合规性 | tests/ |

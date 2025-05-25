@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Danmu Agent",
+  "version": "1.0",
+  "description": "多平台弹幕助手，支持YouTube、B站、Netflix等平台",
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_icon": "assets/icons/icon16.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*", "*://*.bilibili.com/*", "*://*.netflix.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "permissions": ["activeTab", "scripting", "storage"]
+}

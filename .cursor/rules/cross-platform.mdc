@@ -1,0 +1,60 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Cross-Platform Support Rules for Danmu Agent
+
+## 平台支持要求
+- **核心平台**:
+  - YouTube (必须支持)
+  - B站 (必须支持)
+  - 腾讯视频 (必须支持)
+  - Netflix (必须支持)
+- **次要平台**:
+  - Vimeo
+  - 爱奇艺
+  - 优酷
+  - Twitch
+
+## 平台适配器规范
+- **统一接口**:
+  ```typescript
+  interface DanmuAdapter {
+    // 初始化适配器
+    initialize(): Promise<boolean>;
+    // 获取当前弹幕
+    getDanmu(): Promise<DanmuItem[]>;
+    // 获取视频播放器
+    getVideoElement(): HTMLVideoElement | null;
+    // 判断是否适用于当前页面
+    isApplicable(): boolean;
+    // 获取平台特定功能
+    getPlatformFeatures(): PlatformFeatures;
+  }
+  ```
+
+- **抓取策略**:
+  - DOM解析: 首选方法，直接从页面获取弹幕
+  - API访问: 若网站提供公开API，可作为备选
+  - OCR识别: 对于无DOM访问的平台（如Netflix），使用OCR
+
+- **备选抓取方案**:
+  - 平台限制抓取时，提供用户可选的备用方案
+  - 清晰告知用户可能的限制和解决方法
+
+## 跨平台一致性
+- **视觉体验**:
+  - 在所有支持平台保持一致的界面布局
+  - 平台特定功能在UI中清晰标识
+  
+- **功能映射**:
+  - 对功能上有差异的平台提供相近体验
+  - B站"高能预警"功能映射到其他平台
+
+- **配置同步**:
+  - 用户设置跨平台同步
+  - 允许平台特定设置
+
+## Globs (适用范围)
+src/core/adapters/**/*.js, src/core/adapters/**/*.ts, src/utils/platform.js

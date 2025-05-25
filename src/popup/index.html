@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>弹幕助手</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>弹幕助手</h1>
+      <div class="controls">
+        <button id="toggleVoice">语音开关</button>
+        <button id="settings">设置</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <div id="danmuContainer" class="danmu-container">
+        <!-- 弹幕将在这里显示 -->
+      </div>
+
+      <div class="voice-panel">
+        <div class="voice-controls">
+          <select id="voiceSelect">
+            <option value="default">默认音色</option>
+          </select>
+          <input type="range" id="volumeControl" min="0" max="100" value="50">
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="status">
+        <span id="connectionStatus">未连接</span>
+        <span id="messageCount">消息数: 0</span>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

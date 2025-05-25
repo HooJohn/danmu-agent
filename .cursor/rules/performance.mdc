@@ -1,0 +1,41 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Performance & Compatibility Rules for Danmu Agent
+
+## 兼容性要求
+- **平台支持**:
+  - Chrome 90+/Edge 90+/Firefox 90+/Safari 15+。
+  - 启用 WebAssembly SIMD 加速。
+  - 响应式设计，支持移动端。
+- **数据安全**:
+  - 敏感数据（如用户行为记录）脱敏后存储，使用 `IndexedDB` 并加密。
+  - 端侧处理（WebAssembly 实现模型推理）。
+
+## 性能基准
+- **内存占用**:
+  - 插件运行时 ≤150MB（Chrome Task Manager 监控）。
+- **响应延迟**:
+  - 弹幕出现到播报 ≤800ms（Chrome Performance 面板测量）。
+- **模型推理速度**:
+  - 单条弹幕处理 ≤50ms（ONNX Runtime Profiler）。
+
+## 优化策略
+- **Web Worker**:
+  - 将AI模型推理、弹幕筛选等计算密集型任务移至Worker线程。
+  - 弹幕处理使用独立Worker避免阻塞UI线程。
+- **缓存机制**:
+  - 本地缓存高频弹幕文本和处理结果。
+  - 使用LRU策略管理缓存大小。
+- **资源按需加载**:
+  - 平台适配器动态导入。
+  - 延迟加载非关键资源。
+- **降级机制**:
+  - 实时监控内存和CPU使用率。
+  - 弹幕量过大时降低AI筛选频率。
+  - 浏览器不支持WebAssembly时使用轻量级规则引擎替代。
+
+## Globs (适用范围)
+src/utils/*.js, src/utils/*.ts, src/core/**/*.js, workers/*.js

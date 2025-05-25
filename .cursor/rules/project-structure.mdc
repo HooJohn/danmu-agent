@@ -1,0 +1,33 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Project Structure Rules for Danmu Agent
+
+## 目录规范
+- **核心模块**:
+  - `src/core`: 弹幕引擎主逻辑和平台适配器。
+  - `src/ai`: AI模型处理模块。
+  - `src/voice`: 语音合成模块。
+  - `src/utils`: 工具函数与通用组件。
+  - `src/popup`: 插件界面组件。
+- **资源管理**:
+  - `assets`: 存储图标、音频片段等静态资源。
+  - `models`: 存放AI模型文件。
+  - `workers`: Web Worker脚本目录。
+  - `public`: 扩展清单和公共资源。
+  - `tests`: 单元测试和集成测试。
+
+## 文件命名
+- **统一格式**:
+  - 使用 kebab-case（如 `danmu-parser.js`）。
+  - 接口文件以 `.d.ts` 结尾。
+  - 适配器文件以平台名称命名（如 `youtube.js`）。
+- **代码组织**:
+  - 按功能模块分层
+  - 适配器实现统一接口
+  - 测试文件与源码目录结构一致
+
+## Globs (适用范围)
+*.js, *.ts, *.html, *.css

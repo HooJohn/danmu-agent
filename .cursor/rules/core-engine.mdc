@@ -1,0 +1,33 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Core Engine Rules for Danmu Agent
+
+## 功能要求
+- **多平台弹幕抓取**:
+  - 实现通用DOM解析器适配各平台 (YouTube、B站、腾讯视频、Netflix等)
+  - 提供统一接口`DanmuAdapter`供所有平台适配器实现
+  - 时间轴对齐精度 ±1.5 秒（需补偿拖拽进度条偏移）
+  - 对无公开API平台提供OCR技术备用方案
+
+- **平台检测与切换**:
+  - 通过 `chrome.webRequest` 检测当前页面域名
+  - 动态加载对应平台解析脚本
+  - 支持手动切换平台模式
+
+- **AI 模型集成**:
+  - Qwen2.5-Omni 模型需量化为 ONNX 格式，通过 WebAssembly 在浏览器端运行
+  - 支持平台专属模式（直播模式、电影模式、教育模式）
+  - 使用Web Worker处理计算密集型任务，保证UI响应
+
+- **动态筛选逻辑**:
+  - 通过弹幕内容评分实现智能筛选:
+    - **情感倾向**: 积极/消极
+    - **趣味度**: 一般/有趣/高能
+    - **互动价值**: 低/中/高
+  - 技术选型: ONNX.js + WebAssembly SIMD优化
+
+## Globs (适用范围)
+src/core/**/*.js, src/core/**/*.ts, src/ai/**/*.js, src/ai/**/*.ts

@@ -1,0 +1,778 @@
+{
+  "config": {
+    "configFile": "/Users/mc/Desktop/Danmu-Agent/playwright.config.ts",
+    "rootDir": "/Users/mc/Desktop/Danmu-Agent/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/test-results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/mc/Desktop/Danmu-Agent/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/mc/Desktop/Danmu-Agent/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.52.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "port": 5175,
+      "timeout": 120000,
+      "reuseExistingServer": true,
+      "env": {
+        "NODE_ENV": "test",
+        "TEST_MODE": "true"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "api.spec.js",
+      "file": "api.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "API 集成测试",
+          "file": "api.spec.js",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "WebSocket 连接测试",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30169,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 16,
+                            "line": 44
+                          },
+                          "message": "Error: page.waitForFunction: Target page, context or browser has been closed\n\n\u001b[0m \u001b[90m 42 |\u001b[39m   test(\u001b[32m'WebSocket 连接测试'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 43 |\u001b[39m     \u001b[90m// 确保WebSocket已连接\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 44 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForFunction(() \u001b[33m=>\u001b[39m window\u001b[33m.\u001b[39msocket \u001b[33m&&\u001b[39m window\u001b[33m.\u001b[39msocket\u001b[33m.\u001b[39mconnected\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 45 |\u001b[39m     \n \u001b[90m 46 |\u001b[39m     \u001b[90m// 验证WebSocket状态\u001b[39m\n \u001b[90m 47 |\u001b[39m     \u001b[36mconst\u001b[39m isConnected \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:44:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-05-01T10:57:01.722Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-WebSocket-连接测试-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-WebSocket-连接测试-chromium/trace.zip"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30180,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 16,
+                            "line": 44
+                          },
+                          "message": "Error: page.waitForFunction: Target page, context or browser has been closed\n\n\u001b[0m \u001b[90m 42 |\u001b[39m   test(\u001b[32m'WebSocket 连接测试'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 43 |\u001b[39m     \u001b[90m// 确保WebSocket已连接\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 44 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForFunction(() \u001b[33m=>\u001b[39m window\u001b[33m.\u001b[39msocket \u001b[33m&&\u001b[39m window\u001b[33m.\u001b[39msocket\u001b[33m.\u001b[39mconnected\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 45 |\u001b[39m     \n \u001b[90m 46 |\u001b[39m     \u001b[90m// 验证WebSocket状态\u001b[39m\n \u001b[90m 47 |\u001b[39m     \u001b[36mconst\u001b[39m isConnected \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:44:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-05-01T10:57:33.441Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-WebSocket-连接测试-chromium-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-WebSocket-连接测试-chromium-retry1/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-09d6a281a2fcf183a2e5",
+              "file": "api.spec.js",
+              "line": 42,
+              "column": 3
+            },
+            {
+              "title": "弹幕发送 API 测试",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30138,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 34,
+                            "line": 61
+                          },
+                          "message": "Error: page.waitForResponse: Target page, context or browser has been closed\n\n\u001b[0m \u001b[90m 59 |\u001b[39m   test(\u001b[32m'弹幕发送 API 测试'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 60 |\u001b[39m     \u001b[90m// 监听网络请求\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 61 |\u001b[39m     \u001b[36mconst\u001b[39m responsePromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse(response \u001b[33m=>\u001b[39m \n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 62 |\u001b[39m       response\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/danmu'\u001b[39m) \u001b[33m&&\u001b[39m \n \u001b[90m 63 |\u001b[39m       response\u001b[33m.\u001b[39mrequest()\u001b[33m.\u001b[39mmethod() \u001b[33m===\u001b[39m \u001b[32m'POST'\u001b[39m\n \u001b[90m 64 |\u001b[39m     )\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:61:34\u001b[22m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 16,
+                            "line": 67
+                          },
+                          "message": "Error: page.fill: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"text\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 65 |\u001b[39m\n \u001b[90m 66 |\u001b[39m     \u001b[90m// 发送弹幕\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 67 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"text\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'API测试弹幕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 68 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 69 |\u001b[39m\n \u001b[90m 70 |\u001b[39m     \u001b[90m// 等待响应\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:67:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-05-01T10:58:04.994Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-弹幕发送-API-测试-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-弹幕发送-API-测试-chromium/trace.zip"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30133,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 34,
+                            "line": 61
+                          },
+                          "message": "Error: page.waitForResponse: Target page, context or browser has been closed\n\n\u001b[0m \u001b[90m 59 |\u001b[39m   test(\u001b[32m'弹幕发送 API 测试'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 60 |\u001b[39m     \u001b[90m// 监听网络请求\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 61 |\u001b[39m     \u001b[36mconst\u001b[39m responsePromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse(response \u001b[33m=>\u001b[39m \n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 62 |\u001b[39m       response\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/danmu'\u001b[39m) \u001b[33m&&\u001b[39m \n \u001b[90m 63 |\u001b[39m       response\u001b[33m.\u001b[39mrequest()\u001b[33m.\u001b[39mmethod() \u001b[33m===\u001b[39m \u001b[32m'POST'\u001b[39m\n \u001b[90m 64 |\u001b[39m     )\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:61:34\u001b[22m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 16,
+                            "line": 67
+                          },
+                          "message": "Error: page.fill: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"text\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 65 |\u001b[39m\n \u001b[90m 66 |\u001b[39m     \u001b[90m// 发送弹幕\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 67 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"text\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'API测试弹幕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 68 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 69 |\u001b[39m\n \u001b[90m 70 |\u001b[39m     \u001b[90m// 等待响应\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:67:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-05-01T10:58:36.546Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-弹幕发送-API-测试-chromium-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-弹幕发送-API-测试-chromium-retry1/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-4408f4f25ac65fdacd56",
+              "file": "api.spec.js",
+              "line": 59,
+              "column": 3
+            },
+            {
+              "title": "弹幕历史记录 API 测试",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30119,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 34,
+                            "line": 80
+                          },
+                          "message": "Error: page.waitForResponse: Target page, context or browser has been closed\n\n\u001b[0m \u001b[90m 78 |\u001b[39m   test(\u001b[32m'弹幕历史记录 API 测试'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 79 |\u001b[39m     \u001b[90m// 监听历史记录请求\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 80 |\u001b[39m     \u001b[36mconst\u001b[39m responsePromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse(response \u001b[33m=>\u001b[39m \n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 81 |\u001b[39m       response\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/history'\u001b[39m) \u001b[33m&&\u001b[39m \n \u001b[90m 82 |\u001b[39m       response\u001b[33m.\u001b[39mrequest()\u001b[33m.\u001b[39mmethod() \u001b[33m===\u001b[39m \u001b[32m'GET'\u001b[39m\n \u001b[90m 83 |\u001b[39m     )\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:80:34\u001b[22m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 16,
+                            "line": 86
+                          },
+                          "message": "Error: page.click: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('.history-button')\u001b[22m\n\n\n\u001b[0m \u001b[90m 84 |\u001b[39m\n \u001b[90m 85 |\u001b[39m     \u001b[90m// 触发历史记录加载\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 86 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'.history-button'\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// 假设有一个历史记录按钮\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 87 |\u001b[39m\n \u001b[90m 88 |\u001b[39m     \u001b[90m// 等待响应\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m response \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m responsePromise\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:86:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-05-01T10:59:08.252Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-弹幕历史记录-API-测试-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-弹幕历史记录-API-测试-chromium/trace.zip"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30119,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 34,
+                            "line": 80
+                          },
+                          "message": "Error: page.waitForResponse: Target page, context or browser has been closed\n\n\u001b[0m \u001b[90m 78 |\u001b[39m   test(\u001b[32m'弹幕历史记录 API 测试'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 79 |\u001b[39m     \u001b[90m// 监听历史记录请求\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 80 |\u001b[39m     \u001b[36mconst\u001b[39m responsePromise \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mwaitForResponse(response \u001b[33m=>\u001b[39m \n \u001b[90m    |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 81 |\u001b[39m       response\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/api/history'\u001b[39m) \u001b[33m&&\u001b[39m \n \u001b[90m 82 |\u001b[39m       response\u001b[33m.\u001b[39mrequest()\u001b[33m.\u001b[39mmethod() \u001b[33m===\u001b[39m \u001b[32m'GET'\u001b[39m\n \u001b[90m 83 |\u001b[39m     )\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:80:34\u001b[22m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 16,
+                            "line": 86
+                          },
+                          "message": "Error: page.click: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('.history-button')\u001b[22m\n\n\n\u001b[0m \u001b[90m 84 |\u001b[39m\n \u001b[90m 85 |\u001b[39m     \u001b[90m// 触发历史记录加载\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 86 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'.history-button'\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// 假设有一个历史记录按钮\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 87 |\u001b[39m\n \u001b[90m 88 |\u001b[39m     \u001b[90m// 等待响应\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[36mconst\u001b[39m response \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m responsePromise\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:86:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-05-01T10:59:39.567Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-弹幕历史记录-API-测试-chromium-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-弹幕历史记录-API-测试-chromium-retry1/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-0f27e8602ffa13b5d373",
+              "file": "api.spec.js",
+              "line": 78,
+              "column": 3
+            },
+            {
+              "title": "错误处理测试",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30130,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 16,
+                            "line": 103
+                          },
+                          "message": "Error: page.fill: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"text\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 101 |\u001b[39m\n \u001b[90m 102 |\u001b[39m     \u001b[90m// 发送弹幕\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 103 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"text\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'错误测试弹幕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 104 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 105 |\u001b[39m\n \u001b[90m 106 |\u001b[39m     \u001b[90m// 验证错误提示是否显示\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:103:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-05-01T11:00:10.843Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-错误处理测试-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "_error-context-1",
+                          "contentType": "text/markdown",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-错误处理测试-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-错误处理测试-chromium/trace.zip"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30132,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 16,
+                            "line": 103
+                          },
+                          "message": "Error: page.fill: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"text\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 101 |\u001b[39m\n \u001b[90m 102 |\u001b[39m     \u001b[90m// 发送弹幕\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 103 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"text\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'错误测试弹幕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 104 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 105 |\u001b[39m\n \u001b[90m 106 |\u001b[39m     \u001b[90m// 验证错误提示是否显示\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:103:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-05-01T11:00:42.177Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-错误处理测试-chromium-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "_error-context-1",
+                          "contentType": "text/markdown",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-错误处理测试-chromium-retry1/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-错误处理测试-chromium-retry1/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-939d3efb44fc95c02d1c",
+              "file": "api.spec.js",
+              "line": 96,
+              "column": 3
+            },
+            {
+              "title": "重连机制测试",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1292,
+                      "error": {
+                        "message": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'disconnect')\n    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\n    at UtilityScript.evaluate (<anonymous>:315:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+                        "stack": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'disconnect')\n    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\n    at UtilityScript.evaluate (<anonymous>:315:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\n    at UtilityScript.evaluate (<anonymous>:315:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:114:16",
+                        "location": {
+                          "file": "eval at evaluate (:313:29), <anonymous>",
+                          "column": 21,
+                          "line": 2
+                        }
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "eval at evaluate (:313:29), <anonymous>",
+                            "column": 21,
+                            "line": 2
+                          },
+                          "message": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'disconnect')\n\u001b[2m    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\u001b[22m\n\u001b[2m    at UtilityScript.evaluate (<anonymous>:315:16)\u001b[22m\n\u001b[2m    at UtilityScript.<anonymous> (<anonymous>:1:44)\u001b[22m\n\u001b[2m    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\u001b[22m\n\u001b[2m    at UtilityScript.evaluate (<anonymous>:315:16)\u001b[22m\n\u001b[2m    at UtilityScript.<anonymous> (<anonymous>:1:44)\u001b[22m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:114:16\u001b[22m"
+                        },
+                        {
+                          "message": "Error: ENOENT: no such file or directory, open 'eval at evaluate (:313:29), <anonymous>'"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-05-01T11:01:13.477Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-重连机制测试-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-重连机制测试-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "eval at evaluate (:313:29), <anonymous>",
+                        "column": 21,
+                        "line": 2
+                      }
+                    },
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1181,
+                      "error": {
+                        "message": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'disconnect')\n    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\n    at UtilityScript.evaluate (<anonymous>:315:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+                        "stack": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'disconnect')\n    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\n    at UtilityScript.evaluate (<anonymous>:315:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\n    at UtilityScript.evaluate (<anonymous>:315:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:114:16",
+                        "location": {
+                          "file": "eval at evaluate (:313:29), <anonymous>",
+                          "column": 21,
+                          "line": 2
+                        }
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "eval at evaluate (:313:29), <anonymous>",
+                            "column": 21,
+                            "line": 2
+                          },
+                          "message": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'disconnect')\n\u001b[2m    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\u001b[22m\n\u001b[2m    at UtilityScript.evaluate (<anonymous>:315:16)\u001b[22m\n\u001b[2m    at UtilityScript.<anonymous> (<anonymous>:1:44)\u001b[22m\n\u001b[2m    at eval (eval at evaluate (:313:29), <anonymous>:2:21)\u001b[22m\n\u001b[2m    at UtilityScript.evaluate (<anonymous>:315:16)\u001b[22m\n\u001b[2m    at UtilityScript.<anonymous> (<anonymous>:1:44)\u001b[22m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:114:16\u001b[22m"
+                        },
+                        {
+                          "message": "Error: ENOENT: no such file or directory, open 'eval at evaluate (:313:29), <anonymous>'"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-05-01T11:01:15.867Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-重连机制测试-chromium-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-重连机制测试-chromium-retry1/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "eval at evaluate (:313:29), <anonymous>",
+                        "column": 21,
+                        "line": 2
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-fad4d95e6e718dec6625",
+              "file": "api.spec.js",
+              "line": 112,
+              "column": 3
+            },
+            {
+              "title": "消息限流测试",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30132,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 18,
+                            "line": 131
+                          },
+                          "message": "Error: page.fill: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"text\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 129 |\u001b[39m     \u001b[90m// 快速发送多条消息\u001b[39m\n \u001b[90m 130 |\u001b[39m     \u001b[36mfor\u001b[39m (\u001b[36mlet\u001b[39m i \u001b[33m=\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m i \u001b[33m<\u001b[39m \u001b[35m5\u001b[39m\u001b[33m;\u001b[39m i\u001b[33m++\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 131 |\u001b[39m       \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"text\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m`限流测试 ${i}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 132 |\u001b[39m       \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 133 |\u001b[39m     }\n \u001b[90m 134 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:131:18\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-05-01T11:01:18.157Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-消息限流测试-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "_error-context-1",
+                          "contentType": "text/markdown",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-消息限流测试-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-消息限流测试-chromium/trace.zip"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30122,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/mc/Desktop/Danmu-Agent/tests/api.spec.js",
+                            "column": 18,
+                            "line": 131
+                          },
+                          "message": "Error: page.fill: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"text\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 129 |\u001b[39m     \u001b[90m// 快速发送多条消息\u001b[39m\n \u001b[90m 130 |\u001b[39m     \u001b[36mfor\u001b[39m (\u001b[36mlet\u001b[39m i \u001b[33m=\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m i \u001b[33m<\u001b[39m \u001b[35m5\u001b[39m\u001b[33m;\u001b[39m i\u001b[33m++\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 131 |\u001b[39m       \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[type=\"text\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m`限流测试 ${i}`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 132 |\u001b[39m       \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 133 |\u001b[39m     }\n \u001b[90m 134 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/mc/Desktop/Danmu-Agent/tests/api.spec.js:131:18\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-05-01T11:01:49.384Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-消息限流测试-chromium-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "_error-context-1",
+                          "contentType": "text/markdown",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-消息限流测试-chromium-retry1/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/mc/Desktop/Danmu-Agent/test-results/api-API-集成测试-消息限流测试-chromium-retry1/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8747e39b871de0524be5-2559f0d89837ce0ac929",
+              "file": "api.spec.js",
+              "line": 128,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-05-01T10:57:00.609Z",
+    "duration": 319167.99899999995,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  }
+}
