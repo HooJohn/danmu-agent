@@ -25,7 +25,30 @@ class VoiceEngine {
     // 音效处理器
     this.audioContext = null;
     this.gainNode = null;
+
+    this.voiceEnabled = false; // 或 true，取决于您想要的默认值
   }
+
+  // 在 VoiceEngine 类中：
+  isVoiceEnabled() {
+    return this.voiceEnabled;
+  }
+
+  // 在 VoiceEngine 类中：
+  setVoiceEnabled(enabled) {
+    if (typeof enabled !== 'boolean') {
+      logger.warn('setVoiceEnabled: 输入必须是布尔值。已接收：', enabled);
+      return;
+    }
+    this.voiceEnabled = enabled;
+    logger.info(`VoiceEngine voiceEnabled 设置为：${this.voiceEnabled}`);
+    
+    if (!this.voiceEnabled) {
+      this.stop(); // 如果禁用语音，则停止当前语音并清空队列
+    }
+  }
+
+  
 
   /**
    * 初始化语音引擎
@@ -178,6 +201,11 @@ class VoiceEngine {
     if (!this.initialized) {
       logger.error('语音引擎未初始化');
       return false;
+    }
+
+    if (!this.voiceEnabled) {
+      // 如果您想查看语音被抑制的情况，可以在此处添加 logger.debug
+      return false; // 如果未启用，则不说话
     }
     
     if (!text || typeof text !== 'string') {
