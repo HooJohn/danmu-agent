@@ -44,8 +44,21 @@ class DanmuApp {
     this.settingsBtn = document.getElementById('settings'); // Keep for future use
     this.voiceSelect = document.getElementById('voiceSelect');
     this.volumeControl = document.getElementById('volumeControl');
+    this.modeSelect = document.getElementById('modeSelect');
     // this.connectionStatus = document.getElementById('connectionStatus'); // Socket.IO status removed
     this.messageCountElement = document.getElementById('messageCount');
+
+    // Settings Panel Elements
+    this.settingsPanel = document.getElementById('settingsPanel');
+    this.interestingnessThresholdInput = document.getElementById('interestingnessThreshold');
+    this.interestingnessValueDisplay = document.getElementById('interestingnessValue');
+    this.relevanceThresholdInput = document.getElementById('relevanceThreshold');
+    this.relevanceValueDisplay = document.getElementById('relevanceValue');
+    this.sentimentFilterSelect = document.getElementById('sentimentFilter');
+    this.highlightDetectionEnabledCheckbox = document.getElementById('highlightDetectionEnabled');
+    this.vulgarityKeywordsTextarea = document.getElementById('vulgarityKeywords'); // Added
+    this.saveVulgarityKeywordsBtn = document.getElementById('saveVulgarityKeywordsBtn'); // Added
+    this.closeSettingsBtn = document.getElementById('closeSettingsBtn');
     
     // Update status display to generic "弹幕助手" or similar, as Socket.IO is gone
     const connectionStatusEl = document.getElementById('connectionStatus');
@@ -74,7 +87,76 @@ class DanmuApp {
       chrome.runtime.sendMessage({ type: 'SET_VOICE_NAME', data: { voiceName: voiceName } });
     });
 
-    // this.settingsBtn.addEventListener('click', () => { /* For future settings panel */ });
+    if (this.modeSelect) {
+      this.modeSelect.addEventListener('change', (e) => {
+        const selectedMode = e.target.value;
+        chrome.runtime.sendMessage({ type: 'SET_MODE', data: { mode: selectedMode } });
+        console.log('Popup: Mode changed to', selectedMode);
+      });
+    }
+
+    if (this.settingsBtn && this.settingsPanel) {
+      this.settingsBtn.addEventListener('click', () => {
+        this.settingsPanel.style.display = this.settingsPanel.style.display === 'none' ? 'block' : 'none';
+      });
+    }
+
+    if (this.closeSettingsBtn && this.settingsPanel) {
+      this.closeSettingsBtn.addEventListener('click', () => {
+        this.settingsPanel.style.display = 'none';
+      });
+    }
+
+    const createThresholdListener = (inputElement, valueDisplayElement, configKey) => {
+      if (inputElement && valueDisplayElement) {
+        inputElement.addEventListener('input', (e) => {
+          const value = parseFloat(e.target.value);
+          valueDisplayElement.textContent = value.toFixed(1);
+          // Send message on 'change' for less frequent updates
+        });
+        inputElement.addEventListener('change', (e) => {
+            const value = parseFloat(e.target.value);
+            chrome.runtime.sendMessage({ 
+                type: 'UPDATE_AI_FILTER_CONFIG', 
+                data: { [configKey]: value } 
+            });
+        });
+      }
+    };
+    createThresholdListener(this.interestingnessThresholdInput, this.interestingnessValueDisplay, 'interestingnessThreshold');
+    createThresholdListener(this.relevanceThresholdInput, this.relevanceValueDisplay, 'relevanceThreshold');
+
+    if (this.sentimentFilterSelect) {
+      this.sentimentFilterSelect.addEventListener('change', (e) => {
+        const value = e.target.value;
+        chrome.runtime.sendMessage({ 
+            type: 'UPDATE_AI_FILTER_CONFIG', 
+            data: { sentimentFilter: value === 'null' ? null : parseInt(value) } 
+        });
+      });
+    }
+
+    if (this.highlightDetectionEnabledCheckbox) {
+      this.highlightDetectionEnabledCheckbox.addEventListener('change', (e) => {
+        chrome.runtime.sendMessage({ 
+          type: 'SET_HIGHLIGHT_DETECTION_ENABLED', 
+          data: { enabled: e.target.checked } 
+        });
+        console.log('Popup: Highlight Detection enabled set to', e.target.checked);
+      });
+    }
+
+    if (this.saveVulgarityKeywordsBtn && this.vulgarityKeywordsTextarea) {
+      this.saveVulgarityKeywordsBtn.addEventListener('click', () => {
+        const keywordsString = this.vulgarityKeywordsTextarea.value;
+        chrome.runtime.sendMessage({ 
+          type: 'UPDATE_VULGARITY_KEYWORDS', 
+          data: { keywords: keywordsString.split(',').map(k => k.trim()).filter(k => k) } 
+        });
+        console.log('Popup: Vulgarity keywords sent to background.');
+        // Optionally, add a visual confirmation like "Saved!" temporarily
+      });
+    }
   }
 
   requestInitialData() {
@@ -96,6 +178,30 @@ class DanmuApp {
         // If voices are not populated yet, this might not select correctly.
         // Consider storing selectedVoiceName and applying it after voices are populated.
         this.voiceSelect.value = settings.selectedVoiceName;
+    }
+    if (settings.currentMode && this.modeSelect) {
+      this.modeSelect.value = settings.currentMode;
+    }
+
+    // Apply AI Filter Config settings
+    if (settings.aiFilterConfig) {
+      if (this.interestingnessThresholdInput && this.interestingnessValueDisplay) {
+        this.interestingnessThresholdInput.value = settings.aiFilterConfig.interestingnessThreshold;
+        this.interestingnessValueDisplay.textContent = parseFloat(settings.aiFilterConfig.interestingnessThreshold).toFixed(1);
+      }
+      if (this.relevanceThresholdInput && this.relevanceValueDisplay) {
+        this.relevanceThresholdInput.value = settings.aiFilterConfig.relevanceThreshold;
+        this.relevanceValueDisplay.textContent = parseFloat(settings.aiFilterConfig.relevanceThreshold).toFixed(1);
+      }
+      if (this.sentimentFilterSelect) {
+        this.sentimentFilterSelect.value = String(settings.aiFilterConfig.sentimentFilter); // Ensure 'null' is string for value
+      }
+    }
+    if (settings.highlightDetectionEnabled !== undefined && this.highlightDetectionEnabledCheckbox) {
+      this.highlightDetectionEnabledCheckbox.checked = settings.highlightDetectionEnabled;
+    }
+    if (settings.vulgarityKeywords && Array.isArray(settings.vulgarityKeywords) && this.vulgarityKeywordsTextarea) {
+      this.vulgarityKeywordsTextarea.value = settings.vulgarityKeywords.join(', ');
     }
   }
 

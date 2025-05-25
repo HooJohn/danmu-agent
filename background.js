@@ -19,24 +19,66 @@ import { HighlightDetector } from '../src/core/highlightDetector.js';
 // 导入 danmuCore 实例
 import { danmuCore } from '../src/core/index.js'; 
 
+const STORAGE_KEY = 'danmuAgentSettings';
+const DEFAULT_SETTINGS = {
+  currentMode: 'default',
+  aiFilterConfig: {
+    interestingnessThreshold: 0.6,
+    relevanceThreshold: 0.5,
+    sentimentFilter: null // 'null', 1 for positive, -1 for negative
+  },
+  voiceEnabled: false,
+  voiceVolume: 0.8,
+  voiceName: null
+};
+
 class BackgroundWorker {
   constructor() {
     this.modelWorker = null;
     this.voiceEngine = null;
     this.platformAdapter = null;
-    this.timeSynchronizer = new TimeSynchronizer(); // Instantiate TimeSynchronizer
-    this.highlightDetector = new HighlightDetector(); // Instantiate HighlightDetector
+    this.timeSynchronizer = new TimeSynchronizer();
+    this.highlightDetector = new HighlightDetector();
+    this.settings = { ...DEFAULT_SETTINGS }; // Initialize with default settings
+    this.isModelReady = false; // Flag for AI model readiness
     this.isInitialized = false;
+  }
+
+  /**
+   * Loads settings from chrome.storage.local.
+   */
+  async loadSettings() {
+    try {
+      const result = await chrome.storage.local.get(STORAGE_KEY);
+      if (result[STORAGE_KEY]) {
+        // Merge loaded settings with defaults to ensure all keys are present
+        this.settings = { ...DEFAULT_SETTINGS, ...result[STORAGE_KEY] };
+        // Ensure nested objects like aiFilterConfig are also merged properly
+        if (result[STORAGE_KEY].aiFilterConfig) {
+            this.settings.aiFilterConfig = { ...DEFAULT_SETTINGS.aiFilterConfig, ...result[STORAGE_KEY].aiFilterConfig };
+        }
+        logger.info('Settings loaded from storage:', this.settings);
+      } else {
+        logger.info('No settings found in storage, using defaults and saving them.');
+        await chrome.storage.local.set({ [STORAGE_KEY]: this.settings });
+      }
+    } catch (error) {
+      logger.error('Error loading settings:', error);
+    }
   }
 
   /**
    * 初始化后台服务
    */
   async initialize() {
+    await this.loadSettings(); // Load settings first
+
     try {
       // 初始化语音引擎
-      this.voiceEngine = initializeVoiceEngine();
-      logger.info('语音引擎初始化成功');
+      this.voiceEngine = initializeVoiceEngine({ volume: this.settings.voiceVolume });
+      // Assuming VoiceEngine's initialize method loads voices and then we can set voiceEnabled
+      // This part of setting voice name and enabled status will be more robust after model_loaded or voice engine signals readiness
+      logger.info('语音引擎初步配置应用完毕。等待完整初始化...');
       
       // 获取当前平台
       const platform = await getPlatform();
@@ -52,10 +94,14 @@ class BackgroundWorker {
       logger.info(`平台适配器 (${platform}) 加载成功`);
       
       // 初始化模型 Worker
-      this.initModelWorker();
+      this.initModelWorker(); // This will eventually trigger sending AI config and other settings
       
       // 设置消息监听器
       this.setupMessageListeners();
+
+      // Apply other settings that don't depend on model worker readiness
+      danmuCore.setMode(this.settings.currentMode); 
+      // Voice name and enabled status applied more robustly after voice engine and model worker are ready
       
       this.isInitialized = true;
       logger.info('Background Worker 初始化完成');
@@ -81,19 +127,33 @@ class BackgroundWorker {
         // 处理 Worker 消息
         if (type === 'model_loaded') {
           if (success) {
-            logger.info('模型 Worker 报告模型加载成功。');
-            // Send initial filter configuration
-            const defaultConfig = {
-              interestingnessThreshold: 0.6,
-              relevanceThreshold: 0.5,
-              sentimentFilter: null
-            };
+            this.isModelReady = true;
+            logger.info('Model loaded by worker. Sending initial AI filter config.');
             this.modelWorker.postMessage({
-              type: 'update_config',
-              config: defaultConfig
+                type: 'update_config',
+                config: this.settings.aiFilterConfig
             });
-            logger.info('已发送初始配置到 Model Worker:', defaultConfig);
+            
+            // Apply other initial settings to danmuCore and voiceEngine
+            danmuCore.setMode(this.settings.currentMode); // Redundant if already set in initialize, but safe
+            
+            // Ensure voice engine is fully initialized before setting voice name and enabled status
+            this.voiceEngine.initialize().then(() => {
+                logger.info('Voice engine fully initialized. Applying stored voice settings.');
+                if (this.settings.voiceName) {
+                    danmuCore.setVoiceConfig({ voiceName: this.settings.voiceName });
+                }
+                if (typeof this.voiceEngine.setVoiceEnabled === 'function') {
+                    this.voiceEngine.setVoiceEnabled(this.settings.voiceEnabled);
+                } else {
+                    logger.warn('this.voiceEngine.setVoiceEnabled is not a function.');
+                }
+                 // Volume was set at VoiceEngine construction, ensure it's correct
+                danmuCore.setVoiceConfig({ volume: this.settings.voiceVolume });
+            }).catch(err => logger.error("Error during voice engine full initialization for settings apply:", err));
+
           } else {
+            this.isModelReady = false;
             logger.error(`模型 Worker 报告模型加载失败: ${message}`);
           }
         } else if (type === 'config_updated') {
@@ -215,37 +275,85 @@ class BackgroundWorker {
           }
           break;
 
-        case 'toggle_voice':
-          // 开关语音播报
-          if (this.voiceEngine) {
-            if (data && data.enable !== undefined) {
-              this.voiceEngine.setVoiceEnabled(data.enable);
-            } else {
-              this.voiceEngine.toggleVoice();
-            }
+        case 'TOGGLE_VOICE_ENABLED': {
+          const newState = (data && data.enable !== undefined) ? data.enable : !this.settings.voiceEnabled;
+          this.settings.voiceEnabled = newState;
+          if (this.voiceEngine && typeof this.voiceEngine.setVoiceEnabled === 'function') {
+            this.voiceEngine.setVoiceEnabled(newState);
+          } else {
+            logger.warn('VoiceEngine or setVoiceEnabled not available for TOGGLE_VOICE_ENABLED.');
+          }
+          chrome.storage.local.set({ [STORAGE_KEY]: this.settings });
+          logger.info('Voice enabled set to:', newState);
+          // Inform popup of the change so UI can update
+          chrome.runtime.sendMessage({ type: 'CURRENT_SETTINGS_RESPONSE', data: await this.getCurrentSettingsForPopup() });
+          break;
+        }
+
+        case 'SET_VOLUME':
+          if (data && data.volume !== undefined) {
+            this.settings.voiceVolume = data.volume;
+            danmuCore.setVoiceConfig({ volume: data.volume });
+            chrome.storage.local.set({ [STORAGE_KEY]: this.settings });
+            logger.info('Volume set to:', data.volume);
           }
           break;
 
-        case 'update_filter_config':
-          // 更新过滤配置
-          if (this.modelWorker && data) {
-            this.modelWorker.postMessage({
-              type: 'update_config',
-              config: data
-            });
+        case 'SET_VOICE_NAME':
+          if (data && data.voiceName) {
+            this.settings.voiceName = data.voiceName;
+            danmuCore.setVoiceConfig({ voiceName: data.voiceName });
+            chrome.storage.local.set({ [STORAGE_KEY]: this.settings });
+            logger.info('Voice name set to:', data.voiceName);
+          }
+          break;
+        
+        case 'GET_VOICE_LIST':
+          if (danmuCore.voiceEngine) {
+             // Ensure voice engine is initialized and voices loaded
+            (async () => {
+              if (!danmuCore.voiceEngine.initialized) {
+                await danmuCore.voiceEngine.initialize(); // Ensure initialization
+              }
+              const voices = danmuCore.voiceEngine.getVoices().map(v => ({ name: v.name, lang: v.lang, default: v.default }));
+              sendResponse({ type: 'VOICE_LIST_RESPONSE', data: voices });
+            })();
+          } else {
+            sendResponse({ type: 'VOICE_LIST_RESPONSE', data: [] });
+          }
+          return true; // Indicates asynchronous response
+
+        case 'GET_CURRENT_SETTINGS':
+          (async () => {
+            const settingsForPopup = await this.getCurrentSettingsForPopup();
+            sendResponse(settingsForPopup);
+          })();
+          return true; // Indicates asynchronous response
+        
+        case 'UPDATE_AI_FILTER_CONFIG':
+          if (data) {
+            this.settings.aiFilterConfig = { ...this.settings.aiFilterConfig, ...data };
+            if (this.modelWorker && this.isModelReady) {
+              this.modelWorker.postMessage({
+                type: 'update_config',
+                config: this.settings.aiFilterConfig
+              });
+            }
+            chrome.storage.local.set({ [STORAGE_KEY]: this.settings });
+            logger.info('AI Filter Config updated:', this.settings.aiFilterConfig);
           }
           break;
         
         case 'SET_MODE':
           if (data && data.mode) {
-            logger.info(`Background: Received SET_MODE request: ${data.mode}`);
-            danmuCore.setMode(data.mode); // Call setMode on the imported danmuCore instance
-             // Optionally, send confirmation back to popup or content script
-            if (sender.tab) { // From content script
-                // chrome.tabs.sendMessage(sender.tab.id, { type: 'MODE_SET_CONFIRMATION', mode: data.mode });
-            } else { // From popup
-                // chrome.runtime.sendMessage({ type: 'MODE_SET_CONFIRMATION', mode: data.mode });
-            }
+            this.settings.currentMode = data.mode;
+            danmuCore.setMode(data.mode);
+            chrome.storage.local.set({ [STORAGE_KEY]: this.settings });
+            logger.info('Mode set to:', data.mode);
+            // Inform popup of the change so UI can update
+            (async () => {
+                chrome.runtime.sendMessage({ type: 'CURRENT_SETTINGS_RESPONSE', data: await this.getCurrentSettingsForPopup() });
+            })();
           } else {
             logger.warn("Invalid 'SET_MODE' data received:", data);
           }
@@ -254,13 +362,40 @@ class BackgroundWorker {
         default:
           logger.warn('未知消息类型:', type);
       }
-
-      // 如果不需要异步发送响应，返回 false. Return true if sendResponse will be called asynchronously.
+      // Ensure all paths either return false or true if sendResponse is async
+      if (['GET_CURRENT_SETTINGS', 'GET_VOICE_LIST'].includes(type)) {
+         // Already handled by return true in their blocks
+      } else {
+        // For other messages, if no async operation, ensure settings are saved if modified
+      }
       return false; 
     });
+  }
+
+  async getCurrentSettingsForPopup() {
+    const currentSettings = { ...this.settings };
+    if (danmuCore.voiceEngine && danmuCore.voiceEngine.initialized) {
+      currentSettings.voiceEnabled = typeof danmuCore.voiceEngine.isVoiceEnabled === 'function' ? 
+                                         danmuCore.voiceEngine.isVoiceEnabled() : 
+                                         this.settings.voiceEnabled;
+      const currentSelectedVoice = danmuCore.voiceEngine.selectedVoice;
+      currentSettings.voiceName = currentSelectedVoice ? currentSelectedVoice.name : this.settings.voiceName;
+      currentSettings.voiceVolume = danmuCore.voiceEngine.volume !== undefined ? 
+                                        danmuCore.voiceEngine.volume : 
+                                        this.settings.voiceVolume;
+    }
+    // Include aiFilterConfig directly from this.settings
+    currentSettings.aiFilterConfig = { ...this.settings.aiFilterConfig };
+    return currentSettings;
   }
 }
 
 // 初始化 Background Worker
 const backgroundWorker = new BackgroundWorker();
-backgroundWorker.initialize();
+// initialize is async, top-level await is not allowed in service workers.
+// Chrome handles this by keeping the worker alive until the promise resolves.
+backgroundWorker.initialize().then(() => {
+  logger.info("BackgroundWorker initialization promise resolved.");
+}).catch(error => {
+  logger.error("BackgroundWorker initialization failed:", error);
+});

@@ -13,7 +13,17 @@
       <h1>弹幕助手</h1>
       <div class="controls">
         <button id="toggleVoice">语音开关</button>
-        <button id="settings">设置</button>
+        <div class="control-group">
+          <label for="modeSelect" style="margin-right: 5px;">模式:</label>
+          <select id="modeSelect">
+            <option value="default">默认</option>
+            <option value="bilibili">B站</option>
+            <option value="movie">电影</option>
+            <option value="education">教育</option>
+            <!-- Add other modes as needed -->
+          </select>
+        </div>
+        <button id="settings" style="margin-left: 10px;">设置</button>
       </div>
     </header>
 
@@ -29,6 +39,39 @@
           </select>
           <input type="range" id="volumeControl" min="0" max="100" value="50">
         </div>
+      </div>
+
+      <div id="settingsPanel" class="settings-panel" style="display: none; border-top: 1px solid #ccc; margin-top: 10px; padding-top: 10px;">
+        <h2>AI过滤设置</h2>
+        <div class="control-group">
+          <label for="interestingnessThreshold">趣味度阈值:</label>
+          <input type="range" id="interestingnessThreshold" min="0" max="1" step="0.1" value="0.6">
+          <span id="interestingnessValue">0.6</span>
+        </div>
+        <div class="control-group">
+          <label for="relevanceThreshold">相关性阈值:</label>
+          <input type="range" id="relevanceThreshold" min="0" max="1" step="0.1" value="0.5">
+          <span id="relevanceValue">0.5</span>
+        </div>
+        <div class="control-group">
+          <label for="sentimentFilter">情感过滤:</label>
+          <select id="sentimentFilter">
+            <option value="null">不过滤</option>
+            <option value="1">积极</option>
+            <!-- <option value="0">中性(占位)</option> --> <!-- Removed Neutral as it's not typically a filter state -->
+            <option value="-1">消极</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="highlightDetectionEnabled">高能预警:</label>
+          <input type="checkbox" id="highlightDetectionEnabled">
+        </div>
+        <div class="control-group">
+          <label for="vulgarityKeywords">屏蔽词 (逗号分隔):</label>
+          <textarea id="vulgarityKeywords" rows="3" style="width: 95%;"></textarea>
+        </div>
+        <button id="saveVulgarityKeywordsBtn" style="margin-top: 5px;">保存屏蔽词</button>
+        <button id="closeSettingsBtn" style="margin-top: 10px; display: block;">关闭设置</button>
       </div>
     </main>
 
